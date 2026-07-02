@@ -1,0 +1,11 @@
+.root {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+}
+
+.main {
+  margin-left: 220px;
+  margin-top: 64px;
+  padding: var(--space-xl);
+  min-height: calc(100vh - 64px);
+}
