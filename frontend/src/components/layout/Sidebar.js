@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import styles from "./Sidebar.module.css";
 
 const navItems = [
@@ -10,6 +11,14 @@ const navItems = [
 ];
 
 function Sidebar() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <aside className={styles.sidebar}>
       <nav className={styles.nav}>
@@ -28,7 +37,7 @@ function Sidebar() {
       </nav>
 
       <div className={styles.footer}>
-        <button className={styles.logoutBtn}>
+        <button className={styles.logoutBtn} onClick={handleLogout}>
           <span>🚪</span>
           <span>Logout</span>
         </button>

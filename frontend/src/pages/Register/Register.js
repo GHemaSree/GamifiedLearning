@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { registerUser } from "../../api/authApi";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import styles from "./Register.module.css";
@@ -11,6 +14,11 @@ function Register() {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,7 +46,7 @@ function Register() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -46,8 +54,19 @@ function Register() {
       return;
     }
     setErrors({});
-    console.log("Register submitted:", formData);
-    // TODO: replace with real API call once backend is ready
+    setServerError("");
+    setLoading(true);
+    try {
+      const data = await registerUser(formData.fullName, formData.email, formData.password);
+      login(data.user, data.token);
+      navigate("/dashboard");
+    } catch (error) {
+      setServerError(
+        error.response?.data?.message || "Registration failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,6 +75,8 @@ function Register() {
         <div className={styles.badge}>🎓</div>
         <h2 className={styles.title}>Create Account</h2>
         <p className={styles.subtitle}>Start tracking your learning goals</p>
+
+        {serverError && <p className={styles.serverError}>{serverError}</p>}
 
         <form onSubmit={handleSubmit}>
           <Input
@@ -94,7 +115,9 @@ function Register() {
             error={errors.confirmPassword}
             placeholder="Confirm Password"
           />
-          <Button type="submit">Sign Up</Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creating account..." : "Sign Up"}
+          </Button>
         </form>
 
         <p className={styles.footerText}>

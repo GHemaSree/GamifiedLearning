@@ -52,3 +52,10 @@
   color: var(--color-primary);
   font-weight: 600;
 }
+
+.serverError {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-md);
+  text-align: center;
+}

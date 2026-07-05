@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { loginUser } from "../../api/authApi";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import styles from "./Login.module.css";
@@ -6,6 +9,11 @@ import styles from "./Login.module.css";
 function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,7 +35,7 @@ function Login() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -35,8 +43,19 @@ function Login() {
       return;
     }
     setErrors({});
-    console.log("Login submitted:", formData);
-    // TODO: replace with real API call once backend is ready
+    setServerError("");
+    setLoading(true);
+    try {
+      const data = await loginUser(formData.email, formData.password);
+      login(data.user, data.token);
+      navigate("/dashboard");
+    } catch (error) {
+      setServerError(
+        error.response?.data?.message || "Login failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,6 +64,8 @@ function Login() {
         <div className={styles.badge}>🎓</div>
         <h2 className={styles.title}>Welcome Back!</h2>
         <p className={styles.subtitle}>Log in to continue your learning journey</p>
+
+        {serverError && <p className={styles.serverError}>{serverError}</p>}
 
         <form onSubmit={handleSubmit}>
           <Input
@@ -65,7 +86,9 @@ function Login() {
             error={errors.password}
             placeholder="Password"
           />
-          <Button type="submit">Login</Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </Button>
         </form>
 
         <p className={styles.footerText}>
