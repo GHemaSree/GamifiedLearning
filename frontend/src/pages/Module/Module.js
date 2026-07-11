@@ -117,9 +117,12 @@ function Module() {
           >
             📖 View Full Notes
           </button>
-          <button className={styles.quizBtn}>
-            🧠 Start Quiz
-          </button>
+          <button
+  className={styles.quizBtn}
+  onClick={() => navigate(`/quiz/${moduleId}`)}
+>
+  🧠 Start Quiz
+</button>
         </div>
 
       </div>

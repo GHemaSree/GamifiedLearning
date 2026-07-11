@@ -1,0 +1,194 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: 700px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.moduleTitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.questionCount {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+  background-color: #f5f4ff;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+}
+
+/* Progress Bar */
+.progressBar {
+  height: 8px;
+  background-color: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary));
+  border-radius: 999px;
+  transition: width var(--transition-base);
+}
+
+/* Question Card */
+.questionCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.questionText {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xl);
+  line-height: 1.6;
+}
+
+/* Options */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  font-size: var(--font-size-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.option:hover {
+  border-color: var(--color-primary-light);
+  background-color: #f5f4ff;
+}
+
+.selected {
+  border-color: var(--color-primary);
+  background-color: #eeecff;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.optionLetter {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+}
+
+.selected .optionLetter {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* Navigation */
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navBtn {
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  background: transparent;
+  transition: background-color var(--transition-fast);
+}
+
+.navBtn:hover:not(:disabled) {
+  background-color: #f5f4ff;
+}
+
+.navBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.submitBtn {
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--color-success), #15803d);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+  transition: transform var(--transition-fast);
+}
+
+.submitBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.submitBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Dots */
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--color-border);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.dotActive {
+  background-color: var(--color-primary);
+  transform: scale(1.3);
+}
+
+.dotAnswered {
+  background-color: var(--color-primary-light);
+}

@@ -1,0 +1,294 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+/* Banner */
+.banner {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+}
+
+.bannerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.bannerTitle {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.bannerSub {
+  font-size: var(--font-size-sm);
+  opacity: 0.85;
+}
+
+.statsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  background: rgba(255, 255, 255, 0.15);
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(4px);
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.statValue {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.statLabel {
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+}
+
+.statDivider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Level Card */
+.levelCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.levelHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.levelTitle {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.levelNext {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.levelBar {
+  height: 10px;
+  background-color: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: var(--space-sm);
+}
+
+.levelFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary));
+  border-radius: 999px;
+  transition: width var(--transition-base);
+}
+
+.levelSub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+/* Quick Stats */
+.quickStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+.quickStatCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.quickStatIcon {
+  font-size: 28px;
+}
+
+.quickStatValue {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.quickStatLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* Sections */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* Trail Cards */
+.trailList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.trailCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.trailIcon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  background-color: #f5f4ff;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trailInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.trailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trailTitle {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.trailPercent {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.trailCategory {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.progressBar {
+  height: 6px;
+  background-color: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary));
+  border-radius: 999px;
+}
+
+.trailMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Activity */
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.activityDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.activityInfo {
+  flex: 1;
+}
+
+.activityAction {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.activityAction span {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.activityTime {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+}
+
+.activityXp {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-success);
+  flex-shrink: 0;
+}
