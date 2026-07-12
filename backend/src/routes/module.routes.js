@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const { getModuleById } = require('../controllers/module.controller');
+const { protect } = require('../middleware/auth.middleware');
 
-router.get('/', (req, res) => {
-  res.status(200).json({ message: 'Module routes coming in Week 2' });
-});
+router.get('/:id', protect, getModuleById);
 
 module.exports = router;
