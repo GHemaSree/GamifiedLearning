@@ -6,6 +6,11 @@ import Topics from "../pages/Topics/Topics";
 import Trail from "../pages/Trail/Trail";
 import Module from "../pages/Module/Module";
 import Notes from "../pages/Notes/Notes";
+import Quiz from "../pages/Quiz/Quiz";
+import Score from "../pages/Score/Score";
+import Progress from "../pages/Progress/Progress";
+import Recommendations from "../pages/Recommendations/Recommendations";
+import Profile from "../pages/Profile/Profile";
 import ProtectedRoute from "./ProtectedRoute";
 
 function AppRoutes() {
@@ -50,6 +55,46 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Notes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/quiz/:moduleId"
+        element={
+          <ProtectedRoute>
+            <Quiz />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/score"
+        element={
+          <ProtectedRoute>
+            <Score />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/progress"
+        element={
+          <ProtectedRoute>
+            <Progress />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/recommendations"
+        element={
+          <ProtectedRoute>
+            <Recommendations />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />
