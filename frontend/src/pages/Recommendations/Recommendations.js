@@ -1,33 +1,41 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
+import { getRecommendations } from "../../api/recommendationsApi";
 import styles from "./Recommendations.module.css";
-
-const mockRecommendations = {
-  weakConcepts: [
-    { id: 1, concept: "Control Flow", topic: "Python Fundamentals", mastery: 35, icon: "🐍" },
-    { id: 2, concept: "Linked Lists", topic: "Data Structures & Algorithms", mastery: 28, icon: "🧩" },
-    { id: 3, concept: "useEffect Hook", topic: "React Development", mastery: 42, icon: "⚛️" },
-  ],
-  nextTopics: [
-    { id: 3, title: "React Development", icon: "⚛️", category: "Web Development", level: "Intermediate", reason: "Strong foundation in JavaScript detected" },
-    { id: 4, title: "Machine Learning Basics", icon: "🤖", category: "AI & ML", level: "Intermediate", reason: "Python mastery above 70%" },
-    { id: 5, title: "System Design", icon: "🏗️", category: "Architecture", level: "Advanced", reason: "Good progress in CS fundamentals" },
-  ],
-  revisionModules: [
-    { id: 102, title: "Variables & Data Types", trail: "Python Fundamentals", icon: "🐍", score: 60 },
-    { id: 202, title: "Linked Lists", trail: "Data Structures & Algorithms", icon: "🧩", score: 45 },
-  ],
-};
 
 function Recommendations() {
   const navigate = useNavigate();
-  const { weakConcepts, nextTopics, revisionModules } = mockRecommendations;
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        setLoading(true);
+        const result = await getRecommendations();
+        setData(result);
+      } catch (err) {
+        setError("Failed to load recommendations.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRecommendations();
+  }, []);
 
   const getMasteryColor = (mastery) => {
     if (mastery >= 70) return "#16a34a";
     if (mastery >= 50) return "#d97706";
     return "#dc2626";
   };
+
+  if (loading) return <PageLayout><div>Loading recommendations...</div></PageLayout>;
+  if (error) return <PageLayout><div>{error}</div></PageLayout>;
+
+  const conceptsToRevise = data?.conceptsToRevise || [];
+  const suggestedRevision = data?.suggestedRevision || [];
 
   return (
     <PageLayout>
@@ -41,32 +49,35 @@ function Recommendations() {
           </p>
         </div>
 
-        {/* Weak Concepts */}
+        {/* Concepts to Revise — real data */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>⚠️ Concepts to Revise</h3>
             <span className={styles.sectionBadge}>Based on quiz performance</span>
           </div>
+          {conceptsToRevise.length === 0 && (
+            <p>Nothing to revise right now — keep it up!</p>
+          )}
           <div className={styles.weakList}>
-            {weakConcepts.map((item) => (
-              <div key={item.id} className={styles.weakCard}>
-                <div className={styles.weakIcon}>{item.icon}</div>
+            {conceptsToRevise.map((item, i) => (
+              <div key={i} className={styles.weakCard}>
+                <div className={styles.weakIcon}>{item.topicIcon || "📘"}</div>
                 <div className={styles.weakInfo}>
                   <p className={styles.weakConcept}>{item.concept}</p>
-                  <p className={styles.weakTopic}>{item.topic}</p>
+                  <p className={styles.weakTopic}>{item.topicTitle}</p>
                   <div className={styles.masteryBar}>
                     <div
                       className={styles.masteryFill}
                       style={{
-                        width: `${item.mastery}%`,
-                        backgroundColor: getMasteryColor(item.mastery),
+                        width: `${item.masteryPercent}%`,
+                        backgroundColor: getMasteryColor(item.masteryPercent),
                       }}
                     />
                   </div>
                 </div>
                 <div className={styles.masteryScore}>
-                  <span style={{ color: getMasteryColor(item.mastery) }}>
-                    {item.mastery}%
+                  <span style={{ color: getMasteryColor(item.masteryPercent) }}>
+                    {item.masteryPercent}%
                   </span>
                   <span className={styles.masteryLabel}>mastery</span>
                 </div>
@@ -75,59 +86,44 @@ function Recommendations() {
           </div>
         </div>
 
-        {/* Revision Modules */}
+        {/* Suggested Revision — real endpoint, empty until Week 3 */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>🔄 Suggested Revision</h3>
             <span className={styles.sectionBadge}>Modules to revisit</span>
           </div>
-          <div className={styles.revisionList}>
-            {revisionModules.map((module) => (
-              <div
-                key={module.id}
-                className={styles.revisionCard}
-                onClick={() => navigate(`/module/${module.id}`)}
-              >
-                <div className={styles.revisionIcon}>{module.icon}</div>
-                <div className={styles.revisionInfo}>
-                  <p className={styles.revisionTitle}>{module.title}</p>
-                  <p className={styles.revisionTrail}>{module.trail}</p>
+          {suggestedRevision.length === 0 ? (
+            <p>Take a few quizzes and we'll flag anything worth revisiting.</p>
+          ) : (
+            <div className={styles.revisionList}>
+              {suggestedRevision.map((module, i) => (
+                <div
+                  key={i}
+                  className={styles.revisionCard}
+                  onClick={() => navigate(`/module/${module.moduleId}`)}
+                >
+                  <div className={styles.revisionIcon}>📘</div>
+                  <div className={styles.revisionInfo}>
+                    <p className={styles.revisionTitle}>{module.moduleTitle}</p>
+                    <p className={styles.revisionTrail}>{module.trailTitle}</p>
+                  </div>
+                  <div className={styles.revisionScore}>
+                    <span className={styles.scoreBadge}>Last: {module.lastScore}%</span>
+                    <span className={styles.revisionArrow}>→</span>
+                  </div>
                 </div>
-                <div className={styles.revisionScore}>
-                  <span className={styles.scoreBadge}>Last: {module.score}%</span>
-                  <span className={styles.revisionArrow}>→</span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Next Topics */}
+        {/* Recommended Next Topics — not built yet, on hold */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>🚀 Recommended Next Topics</h3>
             <span className={styles.sectionBadge}>AI powered suggestions</span>
           </div>
-          <div className={styles.nextList}>
-            {nextTopics.map((topic) => (
-              <div
-                key={topic.id}
-                className={styles.nextCard}
-                onClick={() => navigate(`/trail/${topic.id}`)}
-              >
-                <div className={styles.nextIcon}>{topic.icon}</div>
-                <div className={styles.nextInfo}>
-                  <p className={styles.nextTitle}>{topic.title}</p>
-                  <p className={styles.nextCategory}>{topic.category}</p>
-                  <p className={styles.nextReason}>💡 {topic.reason}</p>
-                </div>
-                <div className={styles.nextMeta}>
-                  <span className={styles.levelBadge}>{topic.level}</span>
-                  <span className={styles.nextArrow}>→</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <p>Coming soon.</p>
         </div>
 
       </div>

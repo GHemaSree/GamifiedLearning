@@ -28,5 +28,6 @@ const progressSchema = new mongoose.Schema(
 
 // Prevent duplicate progress entries for the same user+module
 progressSchema.index({ user: 1, module: 1 }, { unique: true });
+progressSchema.index({user: 1, trail: 1});
 
 module.exports = mongoose.model('Progress', progressSchema);

@@ -1,115 +1,151 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
+import { getTrailById, generateNextModule } from "../../api/trailApi";
+import { getMyProgress } from "../../api/progressApi";
 import styles from "./Trail.module.css";
-
-const mockTrail = {
-  1: {
-    title: "Python Fundamentals",
-    icon: "🐍",
-    description: "Master the basics of Python programming from scratch.",
-    totalModules: 4,
-    completedModules: 1,
-    modules: [
-      { id: 101, title: "Introduction to Python", duration: "30 mins", status: "completed" },
-      { id: 102, title: "Variables & Data Types", duration: "45 mins", status: "in-progress" },
-      { id: 103, title: "Control Flow", duration: "60 mins", status: "locked" },
-      { id: 104, title: "Functions", duration: "60 mins", status: "locked" },
-    ],
-  },
-  2: {
-    title: "Data Structures & Algorithms",
-    icon: "🧩",
-    description: "Learn essential data structures and algorithmic thinking.",
-    totalModules: 4,
-    completedModules: 0,
-    modules: [
-      { id: 201, title: "Arrays & Strings", duration: "45 mins", status: "in-progress" },
-      { id: 202, title: "Linked Lists", duration: "60 mins", status: "locked" },
-      { id: 203, title: "Stacks & Queues", duration: "60 mins", status: "locked" },
-      { id: 204, title: "Trees & Graphs", duration: "90 mins", status: "locked" },
-    ],
-  },
-};
-
-const statusConfig = {
-  completed: { icon: "✅", label: "Completed", color: "#16a34a" },
-  "in-progress": { icon: "▶️", label: "In Progress", color: "#4f46e5" },
-  locked: { icon: "🔒", label: "Locked", color: "#94a3b8" },
-};
 
 function Trail() {
   const { trailId } = useParams();
   const navigate = useNavigate();
-  const trail = mockTrail[trailId];
+  const [data, setData] = useState(null);
+  const [progress, setProgress] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [generating, setGenerating] = useState(false);
 
-  if (!trail) {
-    return (
-      <PageLayout>
-        <div>Trail not found.</div>
-      </PageLayout>
-    );
-  }
-
-  const progress = Math.round((trail.completedModules / trail.totalModules) * 100);
-
-  const handleModuleClick = (module) => {
-    if (module.status !== "locked") {
-      navigate(`/module/${module.id}`);
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+      const [trailResult, progressResult] = await Promise.all([
+        getTrailById(trailId),
+        getMyProgress(),
+      ]);
+      setData(trailResult);
+      setProgress(progressResult);
+    } catch (err) {
+      setError("Trail not found.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trailId]);
+
+  if (loading) return <PageLayout><p>Loading trail...</p></PageLayout>;
+  if (error) return <PageLayout><p>{error}</p></PageLayout>;
+
+  const { trail, modules, concepts } = data;
+  const sortedConcepts = [...concepts].sort((a, b) => a.order - b.order);
+
+  let nextUnstartedFound = false;
+  const mergedList = sortedConcepts.map((concept) => {
+    const matchingModule = modules.find((m) => m.concept === concept.name);
+
+    if (matchingModule) {
+      const progressEntry = progress.find((p) => p.module?._id === matchingModule._id);
+      return {
+        ...matchingModule,
+        status: progressEntry?.completionStatus || "in_progress",
+      };
+    }
+
+    if (!nextUnstartedFound) {
+      nextUnstartedFound = true;
+      // shown exactly like an in-progress module — same label, same click behavior —
+      // module just doesn't exist in the DB yet until clicked
+      return { concept: concept.name, status: "in_progress", pendingGeneration: true };
+    }
+
+    return { concept: concept.name, status: "locked" };
+  });
+
+  const completedCount = mergedList.filter((m) => m.status === "completed").length;
+  const totalCount = sortedConcepts.length;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  const statusDisplay = (status) => {
+    if (status === "completed") return { icon: "✅", label: "Completed" };
+    if (status === "in_progress") return { icon: "▶️", label: "In Progress" };
+    return { icon: "🔒", label: "Locked" };
+  };
+
+  const handleClick = async (item) => {
+    if (item.status === "locked") return;
+
+    if (item.pendingGeneration) {
+      if (generating) return;
+      setGenerating(true);
+      try {
+        const result = await generateNextModule(trailId);
+        if (result.module) {
+          navigate(`/module/${result.module._id}`);
+        }
+      } catch (err) {
+        alert("Failed to start this module. Please try again.");
+        setGenerating(false);
+      }
+      return;
+    }
+
+    navigate(`/module/${item._id}`);
   };
 
   return (
     <PageLayout>
       <div className={styles.page}>
-
-        {/* Trail Header */}
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <span className={styles.icon}>{trail.icon}</span>
+            <div className={styles.icon}>{trail.topic?.icon || "📘"}</div>
             <div>
-              <h2 className={styles.title}>{trail.title}</h2>
-              <p className={styles.description}>{trail.description}</p>
+              <div className={styles.title}>{trail.title}</div>
+              <div className={styles.description}>{trail.topic?.description}</div>
             </div>
           </div>
+
           <div className={styles.progressBox}>
-            <p className={styles.progressLabel}>{progress}% Complete</p>
+            <div className={styles.progressLabel}>{progressPercent}% Complete</div>
             <div className={styles.progressBar}>
-              <div
-                className={styles.progressFill}
-                style={{ width: `${progress}%` }}
-              />
+              <div className={styles.progressFill} style={{ width: `${progressPercent}%` }} />
             </div>
-            <p className={styles.progressSub}>
-              {trail.completedModules} of {trail.totalModules} modules done
-            </p>
+            <div className={styles.progressSub}>
+              {completedCount} of {totalCount} modules done
+            </div>
           </div>
         </div>
 
-        {/* Module List */}
-        <div className={styles.moduleList}>
+        <div>
           <h3 className={styles.sectionTitle}>Modules</h3>
-          {trail.modules.map((module, index) => {
-            const config = statusConfig[module.status];
-            return (
-              <div
-                key={module.id}
-                className={`${styles.moduleCard} ${module.status === "locked" ? styles.locked : styles.clickable}`}
-                onClick={() => handleModuleClick(module)}
-              >
-                <div className={styles.moduleNumber}>{index + 1}</div>
-                <div className={styles.moduleInfo}>
-                  <h4 className={styles.moduleTitle}>{module.title}</h4>
-                  <p className={styles.moduleDuration}>⏱ {module.duration}</p>
+          <div className={styles.moduleList}>
+            {mergedList.map((item, i) => {
+              const status = statusDisplay(item.status);
+              const clickable = item.status !== "locked";
+              return (
+                <div
+                  key={i}
+                  className={`${styles.moduleCard} ${clickable ? styles.clickable : styles.locked}`}
+                  onClick={() => handleClick(item)}
+                >
+                  <div className={styles.moduleNumber}>{i + 1}</div>
+                  <div className={styles.moduleInfo}>
+                    <div className={styles.moduleTitle}>
+                      {item.pendingGeneration || item.status === "locked" ? item.concept : item.title}
+                    </div>
+                    {!item.pendingGeneration && item.status !== "locked" && (
+                      <div className={styles.moduleDuration}>⏱ {item.duration} mins</div>
+                    )}
+                  </div>
+                  <div className={styles.moduleStatus}>
+                    <span className={styles.statusLabel}>{status.icon} {status.label}</span>
+                  </div>
                 </div>
-                <div className={styles.moduleStatus} style={{ color: config.color }}>
-                  <span>{config.icon}</span>
-                  <span className={styles.statusLabel}>{config.label}</span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-
       </div>
     </PageLayout>
   );

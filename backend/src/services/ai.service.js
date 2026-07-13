@@ -17,6 +17,11 @@ const generateModuleContent = async (topicTitle, concept, difficulty) => {
       `Typical mistakes to avoid`,
       `How ${concept} connects to related concepts`,
     ],
+    sections: [
+    { heading: `What is ${concept}?`, content: `Mock explanation of what ${concept} is, at ${difficulty} depth.` },
+    { heading: `Why ${concept} matters`, content: `Mock explanation of why ${concept} is important in ${topicTitle}.` },
+    { heading: `Working with ${concept}`, content: `Mock detailed walkthrough of using ${concept}, including examples.` },
+  ],  
     content: `Mock ${difficulty}-level detailed notes for ${concept} in ${topicTitle}. Includes a brief recap and basic example before going deeper, per design.`,
     summary: `A quick overview of ${concept}, covering the essentials needed to move forward in ${topicTitle}.`,
     duration: difficulty === 'beginner' ? 25 : difficulty === 'intermediate' ? 35 : 45,

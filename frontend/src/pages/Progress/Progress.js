@@ -1,61 +1,54 @@
+import { useState, useEffect } from "react";
 import PageLayout from "../../components/layout/PageLayout";
+import { useAuth } from "../../context/AuthContext";
+import { getMyTrails } from "../../api/trailApi";
 import styles from "./Progress.module.css";
-
-const mockProgress = {
-  totalXp: 1250,
-  level: 3,
-  streak: 7,
-  totalModulesCompleted: 8,
-  totalQuizzesTaken: 5,
-  averageScore: 78,
-  trails: [
-    {
-      id: 1,
-      title: "Python Fundamentals",
-      icon: "🐍",
-      category: "Programming",
-      modulesCompleted: 3,
-      totalModules: 4,
-      progress: 75,
-      lastStudied: "2 days ago",
-    },
-    {
-      id: 2,
-      title: "Data Structures & Algorithms",
-      icon: "🧩",
-      category: "Computer Science",
-      modulesCompleted: 2,
-      totalModules: 4,
-      progress: 50,
-      lastStudied: "5 days ago",
-    },
-    {
-      id: 3,
-      title: "React Development",
-      icon: "⚛️",
-      category: "Web Development",
-      modulesCompleted: 1,
-      totalModules: 4,
-      progress: 25,
-      lastStudied: "1 week ago",
-    },
-  ],
-  recentActivity: [
-    { id: 1, action: "Completed quiz", topic: "Introduction to Python", xp: 40, time: "2 hours ago" },
-    { id: 2, action: "Studied module", topic: "Variables & Data Types", xp: 20, time: "2 days ago" },
-    { id: 3, action: "Completed quiz", topic: "Arrays & Strings", xp: 30, time: "5 days ago" },
-    { id: 4, action: "Started trail", topic: "React Development", xp: 10, time: "1 week ago" },
-  ],
-};
 
 const levelThresholds = [0, 500, 1000, 2000, 3500, 5000];
 
-function Progress() {
-  const { totalXp, level, streak, totalModulesCompleted, totalQuizzesTaken, averageScore, trails, recentActivity } = mockProgress;
+const formatTimeAgo = (dateString) => {
+  const diffMs = Date.now() - new Date(dateString).getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "1 day ago";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  const diffWeeks = Math.floor(diffDays / 7);
+  return diffWeeks === 1 ? "1 week ago" : `${diffWeeks} weeks ago`;
+};
 
-  const currentLevelXp = levelThresholds[level - 1];
-  const nextLevelXp = levelThresholds[level];
+function Progress() {
+  const { user } = useAuth();
+  const [trails, setTrails] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTrails = async () => {
+      try {
+        setLoading(true);
+        const data = await getMyTrails();
+        setTrails(data);
+      } catch (err) {
+        setError("Failed to load progress.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTrails();
+  }, []);
+
+  if (loading) return <PageLayout><div>Loading progress...</div></PageLayout>;
+  if (error) return <PageLayout><div>{error}</div></PageLayout>;
+
+  const totalXp = user?.xp ?? 0;
+  const level = user?.level ?? 1;
+  const streak = user?.streak ?? 0;
+
+  const currentLevelXp = levelThresholds[level - 1] ?? 0;
+  const nextLevelXp = levelThresholds[level] ?? currentLevelXp + 1000;
   const levelProgress = Math.round(((totalXp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100);
+
+  const totalModulesCompleted = trails.reduce((sum, t) => sum + t.modulesCompleted, 0);
 
   return (
     <PageLayout>
@@ -92,10 +85,7 @@ function Progress() {
             <span className={styles.levelNext}>Next: Level {level + 1}</span>
           </div>
           <div className={styles.levelBar}>
-            <div
-              className={styles.levelFill}
-              style={{ width: `${levelProgress}%` }}
-            />
+            <div className={styles.levelFill} style={{ width: `${levelProgress}%` }} />
           </div>
           <p className={styles.levelSub}>
             {totalXp - currentLevelXp} / {nextLevelXp - currentLevelXp} XP to next level
@@ -111,12 +101,12 @@ function Progress() {
           </div>
           <div className={styles.quickStatCard}>
             <span className={styles.quickStatIcon}>🧠</span>
-            <span className={styles.quickStatValue}>{totalQuizzesTaken}</span>
+            <span className={styles.quickStatValue}>—</span>
             <span className={styles.quickStatLabel}>Quizzes Taken</span>
           </div>
           <div className={styles.quickStatCard}>
             <span className={styles.quickStatIcon}>📊</span>
-            <span className={styles.quickStatValue}>{averageScore}%</span>
+            <span className={styles.quickStatValue}>—</span>
             <span className={styles.quickStatLabel}>Average Score</span>
           </div>
         </div>
@@ -125,24 +115,22 @@ function Progress() {
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Active Trails</h3>
           <div className={styles.trailList}>
+            {trails.length === 0 && <p>No trails yet.</p>}
             {trails.map((trail) => (
-              <div key={trail.id} className={styles.trailCard}>
-                <div className={styles.trailIcon}>{trail.icon}</div>
+              <div key={trail._id} className={styles.trailCard}>
+                <div className={styles.trailIcon}>{trail.topic?.icon}</div>
                 <div className={styles.trailInfo}>
                   <div className={styles.trailHeader}>
                     <p className={styles.trailTitle}>{trail.title}</p>
-                    <span className={styles.trailPercent}>{trail.progress}%</span>
+                    <span className={styles.trailPercent}>{trail.progressPercent}%</span>
                   </div>
-                  <p className={styles.trailCategory}>{trail.category}</p>
+                  <p className={styles.trailCategory}>{trail.topic?.title}</p>
                   <div className={styles.progressBar}>
-                    <div
-                      className={styles.progressFill}
-                      style={{ width: `${trail.progress}%` }}
-                    />
+                    <div className={styles.progressFill} style={{ width: `${trail.progressPercent}%` }} />
                   </div>
                   <div className={styles.trailMeta}>
-                    <span>{trail.modulesCompleted}/{trail.totalModules} modules</span>
-                    <span>Last studied: {trail.lastStudied}</span>
+                    <span>{trail.modulesCompleted}/{trail.modulesTotal} modules</span>
+                    <span>Last studied: {formatTimeAgo(trail.updatedAt)}</span>
                   </div>
                 </div>
               </div>
@@ -150,23 +138,10 @@ function Progress() {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity — placeholder until Week 3 (needs QuizAttempt) */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Recent Activity</h3>
-          <div className={styles.activityList}>
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className={styles.activityItem}>
-                <div className={styles.activityDot} />
-                <div className={styles.activityInfo}>
-                  <p className={styles.activityAction}>
-                    {activity.action} — <span>{activity.topic}</span>
-                  </p>
-                  <p className={styles.activityTime}>{activity.time}</p>
-                </div>
-                <span className={styles.activityXp}>+{activity.xp} XP</span>
-              </div>
-            ))}
-          </div>
+          <p>Activity tracking coming soon.</p>
         </div>
 
       </div>

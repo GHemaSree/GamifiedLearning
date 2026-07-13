@@ -1,64 +1,43 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
+import { getModuleById } from "../../api/moduleApi";
 import styles from "./Module.module.css";
-
-const mockModules = {
-  101: {
-    title: "Introduction to Python",
-    trailTitle: "Python Fundamentals",
-    duration: "30 mins",
-    icon: "🐍",
-    objective: "Understand what Python is, why it is used, and how to set up your environment.",
-    keyPoints: [
-      "Python is a high-level, interpreted programming language",
-      "It is widely used in web development, data science, AI and automation",
-      "Python uses indentation to define code blocks",
-      "Variables do not need explicit type declarations",
-      "Python has a large standard library and active community",
-    ],
-    summary: "Python is one of the most beginner-friendly languages. Its clean syntax and readability make it an ideal first language. In this module you got an overview of Python's history, use cases, and basic environment setup.",
-  },
-  102: {
-    title: "Variables & Data Types",
-    trailTitle: "Python Fundamentals",
-    duration: "45 mins",
-    icon: "🐍",
-    objective: "Learn how to declare variables and work with Python's core data types.",
-    keyPoints: [
-      "Python supports int, float, string, bool and complex types",
-      "Variables are dynamically typed — no need to declare type",
-      "Strings can be defined with single or double quotes",
-      "Type conversion is done using int(), str(), float() functions",
-      "The type() function returns the data type of a variable",
-    ],
-    summary: "Understanding data types is fundamental to programming. Python's dynamic typing makes it flexible but requires careful handling to avoid type errors in larger programs.",
-  },
-  201: {
-    title: "Arrays & Strings",
-    trailTitle: "Data Structures & Algorithms",
-    duration: "45 mins",
-    icon: "🧩",
-    objective: "Understand array operations and string manipulation techniques.",
-    keyPoints: [
-      "Arrays store elements of the same type in contiguous memory",
-      "Python lists act as dynamic arrays",
-      "String indexing starts at 0",
-      "Slicing allows extracting substrings using [start:end]",
-      "Common operations: append, insert, delete, search",
-    ],
-    summary: "Arrays and strings are the most fundamental data structures. Mastering their operations is essential for solving most algorithmic problems efficiently.",
-  },
-};
 
 function Module() {
   const { moduleId } = useParams();
   const navigate = useNavigate();
-  const module = mockModules[moduleId];
+  const [module, setModule] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!module) {
+  useEffect(() => {
+    const fetchModule = async () => {
+      try {
+        setLoading(true);
+        const data = await getModuleById(moduleId);
+        setModule(data);
+      } catch (err) {
+        setError("Module not found.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchModule();
+  }, [moduleId]);
+
+  if (loading) {
     return (
       <PageLayout>
-        <div>Module not found.</div>
+        <div>Loading module...</div>
+      </PageLayout>
+    );
+  }
+
+  if (error || !module) {
+    return (
+      <PageLayout>
+        <div>{error || "Module not found."}</div>
       </PageLayout>
     );
   }
@@ -77,10 +56,10 @@ function Module() {
 
         {/* Module Title */}
         <div className={styles.titleRow}>
-          <span className={styles.icon}>{module.icon}</span>
+          <span className={styles.icon}>{module.icon || "📘"}</span>
           <div>
             <h2 className={styles.title}>{module.title}</h2>
-            <p className={styles.duration}>⏱ {module.duration}</p>
+            <p className={styles.duration}>⏱ {module.duration} mins</p>
           </div>
         </div>
 
@@ -118,11 +97,11 @@ function Module() {
             📖 View Full Notes
           </button>
           <button
-  className={styles.quizBtn}
-  onClick={() => navigate(`/quiz/${moduleId}`)}
->
-  🧠 Start Quiz
-</button>
+            className={styles.quizBtn}
+            onClick={() => navigate(`/quiz/${moduleId}`)}
+          >
+            🧠 Start Quiz
+          </button>
         </div>
 
       </div>

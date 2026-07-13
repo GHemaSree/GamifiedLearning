@@ -33,6 +33,12 @@ const moduleSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    sections: [
+    {
+    heading: { type: String, required: true },
+    content: { type: String, required: true },
+    },
+    ],
     duration: {
       type: Number, // minutes
       default: 30,
@@ -50,5 +56,5 @@ const moduleSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
+moduleSchema.index({ trail: 1 });
 module.exports = mongoose.model('Module', moduleSchema);

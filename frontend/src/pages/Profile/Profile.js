@@ -1,36 +1,45 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import PageLayout from "../../components/layout/PageLayout";
+import { getMyTrails } from "../../api/trailApi";
 import styles from "./Profile.module.css";
 
 function Profile() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [trails, setTrails] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTrails = async () => {
+      try {
+        const data = await getMyTrails();
+        setTrails(data);
+      } catch (err) {
+        // fail quietly here — profile page shouldn't break over trail stats
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTrails();
+  }, []);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  const mockStats = {
-    xp: 1250,
-    level: 3,
-    streak: 7,
-    badges: 5,
-    trailsCompleted: 1,
-    modulesCompleted: 8,
-    quizzesTaken: 5,
-    averageScore: 78,
-  };
+  const modulesCompleted = trails.reduce((sum, t) => sum + t.modulesCompleted, 0);
+  const trailsCompleted = trails.filter((t) => t.status === "completed").length;
 
-  const mockBadges = [
-    { id: 1, icon: "⭐", label: "First Step", description: "Completed your first module", earned: true },
-    { id: 2, icon: "🔥", label: "7 Day Streak", description: "Maintained a 7-day streak", earned: true },
-    { id: 3, icon: "🎯", label: "Goal Crusher", description: "Scored 100% on a quiz", earned: true },
-    { id: 4, icon: "🏆", label: "Trail Blazer", description: "Completed your first trail", earned: true },
-    { id: 5, icon: "🧠", label: "Knowledge Seeker", description: "Took 5 quizzes", earned: true },
-    { id: 6, icon: "🚀", label: "Speed Learner", description: "Complete 3 modules in one day", earned: false },
-  ];
+  const stats = {
+    xp: user?.xp ?? 0,
+    level: user?.level ?? 1,
+    streak: user?.streak ?? 0,
+    modulesCompleted,
+    trailsCompleted,
+  };
 
   return (
     <PageLayout>
@@ -44,7 +53,7 @@ function Profile() {
           <div className={styles.profileInfo}>
             <h2 className={styles.profileName}>{user?.name || "Learner"}</h2>
             <p className={styles.profileEmail}>{user?.email || ""}</p>
-            <div className={styles.levelBadge}>⭐ Level {mockStats.level} Learner</div>
+            <div className={styles.levelBadge}>⭐ Level {stats.level} Learner</div>
           </div>
         </div>
 
@@ -52,54 +61,40 @@ function Profile() {
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
             <span className={styles.statIcon}>🪙</span>
-            <span className={styles.statValue}>{mockStats.xp}</span>
+            <span className={styles.statValue}>{stats.xp}</span>
             <span className={styles.statLabel}>Total XP</span>
           </div>
           <div className={styles.statCard}>
             <span className={styles.statIcon}>🔥</span>
-            <span className={styles.statValue}>{mockStats.streak}</span>
+            <span className={styles.statValue}>{stats.streak}</span>
             <span className={styles.statLabel}>Day Streak</span>
           </div>
           <div className={styles.statCard}>
             <span className={styles.statIcon}>📚</span>
-            <span className={styles.statValue}>{mockStats.modulesCompleted}</span>
+            <span className={styles.statValue}>{loading ? "—" : stats.modulesCompleted}</span>
             <span className={styles.statLabel}>Modules Done</span>
           </div>
           <div className={styles.statCard}>
             <span className={styles.statIcon}>🧠</span>
-            <span className={styles.statValue}>{mockStats.quizzesTaken}</span>
+            <span className={styles.statValue}>—</span>
             <span className={styles.statLabel}>Quizzes Taken</span>
           </div>
           <div className={styles.statCard}>
             <span className={styles.statIcon}>📊</span>
-            <span className={styles.statValue}>{mockStats.averageScore}%</span>
+            <span className={styles.statValue}>—</span>
             <span className={styles.statLabel}>Avg Score</span>
           </div>
           <div className={styles.statCard}>
             <span className={styles.statIcon}>🏁</span>
-            <span className={styles.statValue}>{mockStats.trailsCompleted}</span>
+            <span className={styles.statValue}>{loading ? "—" : stats.trailsCompleted}</span>
             <span className={styles.statLabel}>Trails Done</span>
           </div>
         </div>
 
-        {/* Badges */}
+        {/* Badges — placeholder until Week 3 */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>🏅 Badges</h3>
-          <div className={styles.badgeGrid}>
-            {mockBadges.map((badge) => (
-              <div
-                key={badge.id}
-                className={`${styles.badgeCard} ${!badge.earned ? styles.badgeLocked : ""}`}
-              >
-                <span className={styles.badgeIcon}>{badge.icon}</span>
-                <p className={styles.badgeLabel}>{badge.label}</p>
-                <p className={styles.badgeDesc}>{badge.description}</p>
-                {!badge.earned && (
-                  <span className={styles.lockedTag}>🔒 Locked</span>
-                )}
-              </div>
-            ))}
-          </div>
+          <p>Badges coming soon — keep learning to start earning them!</p>
         </div>
 
         {/* Account Settings */}

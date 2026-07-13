@@ -26,4 +26,7 @@ const trailSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Prevents duplicate trails for the same user+topic, even under race conditions
+trailSchema.index({ user: 1, topic: 1 }, { unique: true });
+
 module.exports = mongoose.model('Trail', trailSchema);

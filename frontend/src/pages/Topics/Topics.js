@@ -1,16 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
+import { getTopics } from "../../api/topicsApi";
+import { getTrailByTopic, createTrail } from "../../api/trailApi";
 import styles from "./Topics.module.css";
-
-const mockTopics = [
-  { id: 1, title: "Python Fundamentals", icon: "🐍", category: "Programming", level: "Beginner", modules: 8 },
-  { id: 2, title: "Data Structures & Algorithms", icon: "🧩", category: "Computer Science", level: "Intermediate", modules: 12 },
-  { id: 3, title: "React Development", icon: "⚛️", category: "Web Development", level: "Intermediate", modules: 10 },
-  { id: 4, title: "Machine Learning", icon: "🤖", category: "AI & ML", level: "Advanced", modules: 15 },
-  { id: 5, title: "Database Design", icon: "🗄️", category: "Backend", level: "Beginner", modules: 7 },
-  { id: 6, title: "System Design", icon: "🏗️", category: "Architecture", level: "Advanced", modules: 9 },
-];
 
 const levelColors = {
   Beginner: "#16a34a",
@@ -19,17 +12,66 @@ const levelColors = {
 };
 
 function Topics() {
+  const [topics, setTopics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  const filtered = mockTopics.filter((topic) =>
-    topic.title.toLowerCase().includes(search.toLowerCase()) ||
-    topic.category.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        setLoading(true);
+        const data = await getTopics();
+        setTopics(data);
+      } catch (err) {
+        setError("Failed to load topics. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTopics();
+  }, []);
+
+  const filtered = topics.filter(
+    (topic) =>
+      topic.title.toLowerCase().includes(search.toLowerCase()) ||
+      (topic.description || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleTopicClick = (topicId) => {
-    navigate(`/trail/${topicId}`);
-  };
+  const handleTopicClick = async (topicId) => {
+  try {
+    const existingTrail = await getTrailByTopic(topicId);
+    navigate(`/trail/${existingTrail._id}`);
+  } catch (err) {
+    try {
+      const data = await createTrail(topicId);
+      navigate(`/trail/${data.trail._id}`);
+    } catch (createErr) {
+      alert("Failed to open this topic. Please try again.");
+    }
+  }
+};
+
+  if (loading) {
+    return (
+      <PageLayout>
+        <div className={styles.page}>
+          <p>Loading topics...</p>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageLayout>
+        <div className={styles.page}>
+          <p>{error}</p>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
@@ -50,33 +92,24 @@ function Topics() {
         <div className={styles.grid}>
           {filtered.map((topic) => (
             <div
-              key={topic.id}
+              key={topic._id}
               className={styles.card}
-              onClick={() => handleTopicClick(topic.id)}
+              onClick={() => handleTopicClick(topic._id)}
             >
               <div className={styles.icon}>{topic.icon}</div>
               <div className={styles.info}>
                 <h3 className={styles.topicTitle}>{topic.title}</h3>
-                <p className={styles.category}>{topic.category}</p>
-                <div className={styles.meta}>
-                  <span
-                    className={styles.level}
-                    style={{ color: levelColors[topic.level] }}
-                  >
-                    ● {topic.level}
-                  </span>
-                  <span className={styles.modules}>{topic.modules} modules</span>
-                </div>
+                <p className={styles.category}>{topic.description}</p>
+                <span style={{ color: levelColors[topic.level] }}>
+                  {topic.level}
+                </span>
+                <span> · {topic.concepts?.length || 0} concepts</span>
               </div>
             </div>
           ))}
         </div>
 
-        {filtered.length === 0 && (
-          <div className={styles.empty}>
-            <p>No topics found for "{search}"</p>
-          </div>
-        )}
+        {filtered.length === 0 && <p>No topics found.</p>}
       </div>
     </PageLayout>
   );
