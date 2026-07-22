@@ -1,62 +1,140 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
-import { getTrailById, generateNextModule } from "../../api/trailApi";
+import { getTrailById, createTrail, generateNextModule } from "../../api/trailApi";
+import { getTopicById } from "../../api/topicsApi";
 import { getMyProgress } from "../../api/progressApi";
 import styles from "./Trail.module.css";
 
 function Trail() {
   const { trailId } = useParams();
   const navigate = useNavigate();
+  const isPreview = trailId.startsWith("preview-");
+  const topicId = isPreview ? trailId.replace("preview-", "") : null;
+
   const [data, setData] = useState(null);
+  const [topic, setTopic] = useState(null);
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [generating, setGenerating] = useState(false);
 
-  const fetchAll = async () => {
-    try {
-      setLoading(true);
-      const [trailResult, progressResult] = await Promise.all([
-        getTrailById(trailId),
-        getMyProgress(),
-      ]);
-      setData(trailResult);
-      setProgress(progressResult);
-    } catch (err) {
-      setError("Trail not found.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchAll();
+    const fetchPreview = async () => {
+      try {
+        setLoading(true);
+        const topicData = await getTopicById(topicId);
+        setTopic(topicData);
+      } catch (err) {
+        setError("Topic not found.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchRealTrail = async () => {
+      try {
+        setLoading(true);
+        const [trailResult, progressResult] = await Promise.all([
+          getTrailById(trailId),
+          getMyProgress(),
+        ]);
+        setData(trailResult);
+        setProgress(progressResult.progress);
+      } catch (err) {
+        setError("Trail not found.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isPreview) {
+      fetchPreview();
+    } else {
+      fetchRealTrail();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trailId]);
 
-  if (loading) return <PageLayout><p>Loading trail...</p></PageLayout>;
+  const handleStartFirstConcept = async () => {
+    if (generating) return;
+    setGenerating(true);
+    try {
+      const trailData = await createTrail(topicId); // real trail created NOW, first commitment
+      const moduleResult = await generateNextModule(trailData.trail._id);
+      if (moduleResult.module) {
+        navigate(`/module/${moduleResult.module._id}`);
+      }
+    } catch (err) {
+      alert("Failed to start this topic. Please try again.");
+      setGenerating(false);
+    }
+  };
+
+  if (loading) return <PageLayout><p>Loading...</p></PageLayout>;
   if (error) return <PageLayout><p>{error}</p></PageLayout>;
 
+  // ---- PREVIEW MODE: no trail exists, nothing generated, nothing written to DB ----
+  if (isPreview) {
+    const sortedConcepts = [...topic.concepts].sort((a, b) => a.order - b.order);
+
+    return (
+      <PageLayout>
+        <div className={styles.page}>
+          <div className={styles.header}>
+            <div className={styles.headerLeft}>
+              <div className={styles.icon}>{topic.icon}</div>
+              <div>
+                <div className={styles.title}>{topic.title}</div>
+                <div className={styles.description}>{topic.description}</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className={styles.sectionTitle}>Modules</h3>
+            <div className={styles.moduleList}>
+              {sortedConcepts.map((concept, i) => (
+                <div
+                  key={i}
+                  className={`${styles.moduleCard} ${i === 0 ? styles.clickable : styles.locked}`}
+                  onClick={() => i === 0 && handleStartFirstConcept()}
+                >
+                  <div className={styles.moduleNumber}>{i + 1}</div>
+                  <div className={styles.moduleInfo}>
+                    <div className={styles.moduleTitle}>{concept.name}</div>
+                  </div>
+                  <div className={styles.moduleStatus}>
+                    <span className={styles.statusLabel}>
+                      {i === 0 ? (generating ? "▶️ Starting..." : "▶️ In Progress") : "🔒 Locked"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // ---- REAL TRAIL MODE: trail exists, render as before ----
   const { trail, modules, concepts } = data;
   const sortedConcepts = [...concepts].sort((a, b) => a.order - b.order);
 
-  let nextUnstartedFound = false;
+  let blocked = false;
   const mergedList = sortedConcepts.map((concept) => {
     const matchingModule = modules.find((m) => m.concept === concept.name);
 
     if (matchingModule) {
       const progressEntry = progress.find((p) => p.module?._id === matchingModule._id);
-      return {
-        ...matchingModule,
-        status: progressEntry?.completionStatus || "in_progress",
-      };
+      const status = progressEntry?.completionStatus || "in_progress";
+      if (status !== "completed") blocked = true;
+      return { ...matchingModule, status };
     }
 
-    if (!nextUnstartedFound) {
-      nextUnstartedFound = true;
-      // shown exactly like an in-progress module — same label, same click behavior —
-      // module just doesn't exist in the DB yet until clicked
+    if (!blocked && trail.status !== "completed") {
+      blocked = true;
       return { concept: concept.name, status: "in_progress", pendingGeneration: true };
     }
 
@@ -97,6 +175,13 @@ function Trail() {
   return (
     <PageLayout>
       <div className={styles.page}>
+
+        {trail.status === "completed" && (
+          <div className={styles.completionBanner}>
+            🎉 Trail Complete! You've mastered every concept in {trail.title}.
+          </div>
+        )}
+
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <div className={styles.icon}>{trail.topic?.icon || "📘"}</div>

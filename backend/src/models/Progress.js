@@ -25,7 +25,6 @@ const progressSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 // Prevent duplicate progress entries for the same user+module
 progressSchema.index({ user: 1, module: 1 }, { unique: true });
 progressSchema.index({user: 1, trail: 1});

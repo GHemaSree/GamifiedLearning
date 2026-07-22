@@ -1,28 +1,55 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { getCurrentUser } from "../../api/authApi";
 import PageLayout from "../../components/layout/PageLayout";
 import { getMyTrails } from "../../api/trailApi";
+import { getMyProgress } from "../../api/progressApi";
+import { getMyBadges } from "../../api/achievementsApi";
 import styles from "./Profile.module.css";
 
 function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [trails, setTrails] = useState([]);
+  const [quizStats, setQuizStats] = useState({ totalQuizzesTaken: 0, averageScore: 0 });
+  const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTrails = async () => {
+    const fetchData = async () => {
       try {
-        const data = await getMyTrails();
-        setTrails(data);
+        const [trailsData, progressData, badgesData] = await Promise.all([
+          getMyTrails(),
+          getMyProgress(),
+          getMyBadges(),
+        ]);
+        setTrails(trailsData);
+        setQuizStats({
+          totalQuizzesTaken: progressData.totalQuizzesTaken,
+          averageScore: progressData.averageScore,
+        });
+        setBadges(badgesData);
       } catch (err) {
-        // fail quietly here — profile page shouldn't break over trail stats
+        // fail quietly
       } finally {
         setLoading(false);
       }
     };
-    fetchTrails();
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const syncUser = async () => {
+      try {
+        const freshUser = await getCurrentUser();
+        refreshUser(freshUser.user || freshUser);
+      } catch (err) {
+        // fail silently
+      }
+    };
+    syncUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = () => {
@@ -76,12 +103,12 @@ function Profile() {
           </div>
           <div className={styles.statCard}>
             <span className={styles.statIcon}>🧠</span>
-            <span className={styles.statValue}>—</span>
+            <span className={styles.statValue}>{loading ? "—" : quizStats.totalQuizzesTaken}</span>
             <span className={styles.statLabel}>Quizzes Taken</span>
           </div>
           <div className={styles.statCard}>
             <span className={styles.statIcon}>📊</span>
-            <span className={styles.statValue}>—</span>
+            <span className={styles.statValue}>{loading ? "—" : `${quizStats.averageScore}%`}</span>
             <span className={styles.statLabel}>Avg Score</span>
           </div>
           <div className={styles.statCard}>
@@ -91,10 +118,24 @@ function Profile() {
           </div>
         </div>
 
-        {/* Badges — placeholder until Week 3 */}
+        {/* Badges — real data */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>🏅 Badges</h3>
-          <p>Badges coming soon — keep learning to start earning them!</p>
+          <div className={styles.badgeGrid}>
+            {badges.map((badge) => (
+              <div
+                key={badge.key}
+                className={`${styles.badgeCard} ${!badge.earned ? styles.badgeLocked : ""}`}
+              >
+                <span className={styles.badgeIcon}>{badge.icon}</span>
+                <p className={styles.badgeLabel}>{badge.label}</p>
+                <p className={styles.badgeDesc}>{badge.description}</p>
+                {!badge.earned && (
+                  <span className={styles.lockedTag}>🔒 Locked</span>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Account Settings */}

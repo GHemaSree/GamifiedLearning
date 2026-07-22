@@ -1,4 +1,5 @@
 const Progress = require('../models/Progress');
+const QuizAttempt = require('../models/QuizAttempt');
 
 // @desc    Get the learner's own overall progress
 // @route   GET /progress
@@ -8,7 +9,14 @@ exports.getMyProgress = async (req, res) => {
     const progress = await Progress.find({ user: req.user._id })
       .populate('trail', 'title status')
       .populate('module', 'title order');
-    res.status(200).json(progress);
+
+    const attempts = await QuizAttempt.find({ user: req.user._id });
+    const totalQuizzesTaken = attempts.length;
+    const averageScore = totalQuizzesTaken > 0
+      ? Math.round(attempts.reduce((sum, a) => sum + a.score, 0) / totalQuizzesTaken)
+      : 0;
+
+    res.status(200).json({ progress, totalQuizzesTaken, averageScore });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -28,7 +36,14 @@ exports.getProgressByUserId = async (req, res) => {
     const progress = await Progress.find({ user: userId })
       .populate('trail', 'title status')
       .populate('module', 'title order');
-    res.status(200).json(progress);
+
+    const attempts = await QuizAttempt.find({ user: userId });
+    const totalQuizzesTaken = attempts.length;
+    const averageScore = totalQuizzesTaken > 0
+      ? Math.round(attempts.reduce((sum, a) => sum + a.score, 0) / totalQuizzesTaken)
+      : 0;
+
+    res.status(200).json({ progress, totalQuizzesTaken, averageScore });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

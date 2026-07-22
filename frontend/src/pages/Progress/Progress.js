@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import PageLayout from "../../components/layout/PageLayout";
 import { useAuth } from "../../context/AuthContext";
 import { getMyTrails } from "../../api/trailApi";
+import { getMyProgress } from "../../api/progressApi";
 import styles from "./Progress.module.css";
 
 const levelThresholds = [0, 500, 1000, 2000, 3500, 5000];
@@ -19,22 +20,30 @@ const formatTimeAgo = (dateString) => {
 function Progress() {
   const { user } = useAuth();
   const [trails, setTrails] = useState([]);
+  const [quizStats, setQuizStats] = useState({ totalQuizzesTaken: 0, averageScore: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchTrails = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await getMyTrails();
-        setTrails(data);
+        const [trailsData, progressData] = await Promise.all([
+          getMyTrails(),
+          getMyProgress(),
+        ]);
+        setTrails(trailsData);
+        setQuizStats({
+          totalQuizzesTaken: progressData.totalQuizzesTaken,
+          averageScore: progressData.averageScore,
+        });
       } catch (err) {
         setError("Failed to load progress.");
       } finally {
         setLoading(false);
       }
     };
-    fetchTrails();
+    fetchData();
   }, []);
 
   if (loading) return <PageLayout><div>Loading progress...</div></PageLayout>;
@@ -101,12 +110,12 @@ function Progress() {
           </div>
           <div className={styles.quickStatCard}>
             <span className={styles.quickStatIcon}>🧠</span>
-            <span className={styles.quickStatValue}>—</span>
+            <span className={styles.quickStatValue}>{quizStats.totalQuizzesTaken}</span>
             <span className={styles.quickStatLabel}>Quizzes Taken</span>
           </div>
           <div className={styles.quickStatCard}>
             <span className={styles.quickStatIcon}>📊</span>
-            <span className={styles.quickStatValue}>—</span>
+            <span className={styles.quickStatValue}>{quizStats.averageScore}%</span>
             <span className={styles.quickStatLabel}>Average Score</span>
           </div>
         </div>
@@ -138,7 +147,7 @@ function Progress() {
           </div>
         </div>
 
-        {/* Recent Activity — placeholder until Week 3 (needs QuizAttempt) */}
+        {/* Recent Activity — placeholder until further built */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Recent Activity</h3>
           <p>Activity tracking coming soon.</p>

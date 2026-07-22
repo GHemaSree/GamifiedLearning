@@ -1,4 +1,5 @@
 import axios from "axios";
+import client from "./client";
 
 const API_BASE_URL = "http://localhost:5000";
 
@@ -16,5 +17,9 @@ export const registerUser = async (name, email, password) => {
     email,
     password,
   });
+  return response.data;
+};
+export const getCurrentUser = async () => {
+  const response = await client.get("/auth/me");
   return response.data;
 };

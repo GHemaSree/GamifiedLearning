@@ -18,10 +18,10 @@ const generateModuleContent = async (topicTitle, concept, difficulty) => {
       `How ${concept} connects to related concepts`,
     ],
     sections: [
-    { heading: `What is ${concept}?`, content: `Mock explanation of what ${concept} is, at ${difficulty} depth.` },
-    { heading: `Why ${concept} matters`, content: `Mock explanation of why ${concept} is important in ${topicTitle}.` },
-    { heading: `Working with ${concept}`, content: `Mock detailed walkthrough of using ${concept}, including examples.` },
-  ],  
+      { heading: `What is ${concept}?`, content: `Mock explanation of what ${concept} is, at ${difficulty} depth.` },
+      { heading: `Why ${concept} matters`, content: `Mock explanation of why ${concept} is important in ${topicTitle}.` },
+      { heading: `Working with ${concept}`, content: `Mock detailed walkthrough of using ${concept}, including examples.` },
+    ],
     content: `Mock ${difficulty}-level detailed notes for ${concept} in ${topicTitle}. Includes a brief recap and basic example before going deeper, per design.`,
     summary: `A quick overview of ${concept}, covering the essentials needed to move forward in ${topicTitle}.`,
     duration: difficulty === 'beginner' ? 25 : difficulty === 'intermediate' ? 35 : 45,
@@ -50,4 +50,15 @@ const getDKTPrediction = async (priorMastery, difficulty, isCorrect) => {
   return { updated, nextDifficulty, readyToAdvanceConcept };
 };
 
-module.exports = { generateModuleContent, getDKTPrediction };
+const generateQuiz = async (topicTitle, concept, difficulty) => {
+  await new Promise((resolve) => setTimeout(resolve, 600));
+
+  // Mock: 5 generic questions per module, matching module difficulty
+  return Array.from({ length: 5 }, (_, i) => ({
+    question: `Mock ${difficulty} question ${i + 1} about ${concept} in ${topicTitle}?`,
+    options: [`Option A`, `Option B`, `Option C`, `Option D`],
+    correctAnswer: 0, // mock always sets option A correct — replace once real Gemini quiz gen is live
+  }));
+};
+
+module.exports = { generateModuleContent, getDKTPrediction, generateQuiz };

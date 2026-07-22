@@ -15,6 +15,7 @@ exports.getModuleById = async (req, res) => {
 
     res.status(200).json({ ...module.toObject(), trailTitle: trail.title, icon: trail.topic?.icon });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };

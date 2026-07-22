@@ -1,97 +1,49 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
+import { getModuleQuiz } from "../../api/moduleApi";
+import { submitQuiz } from "../../api/quizApi";
 import styles from "./Quiz.module.css";
-
-const mockQuizzes = {
-  101: {
-    moduleTitle: "Introduction to Python",
-    questions: [
-      {
-        id: "q1",
-        question: "What type of language is Python?",
-        options: [
-          "Low-level compiled language",
-          "High-level interpreted language",
-          "Assembly language",
-          "Machine language",
-        ],
-        correctAnswer: 1,
-      },
-      {
-        id: "q2",
-        question: "Who created Python?",
-        options: [
-          "James Gosling",
-          "Bjarne Stroustrup",
-          "Guido van Rossum",
-          "Dennis Ritchie",
-        ],
-        correctAnswer: 2,
-      },
-      {
-        id: "q3",
-        question: "What does Python use to define code blocks?",
-        options: [
-          "Curly braces {}",
-          "Square brackets []",
-          "Indentation",
-          "Parentheses ()",
-        ],
-        correctAnswer: 2,
-      },
-      {
-        id: "q4",
-        question: "Which of these is a valid Python file extension?",
-        options: [".java", ".py", ".cpp", ".js"],
-        correctAnswer: 1,
-      },
-      {
-        id: "q5",
-        question: "What function is used to print output in Python?",
-        options: ["echo()", "console.log()", "printf()", "print()"],
-        correctAnswer: 3,
-      },
-    ],
-  },
-  102: {
-    moduleTitle: "Variables & Data Types",
-    questions: [
-      {
-        id: "q1",
-        question: "Which of these is NOT a Python data type?",
-        options: ["int", "float", "char", "bool"],
-        correctAnswer: 2,
-      },
-      {
-        id: "q2",
-        question: "What function returns the data type of a variable?",
-        options: ["datatype()", "typeof()", "type()", "gettype()"],
-        correctAnswer: 2,
-      },
-      {
-        id: "q3",
-        question: "How do you convert a string '42' to an integer in Python?",
-        options: ["str(42)", "int('42')", "float('42')", "convert('42')"],
-        correctAnswer: 1,
-      },
-    ],
-  },
-};
 
 function Quiz() {
   const { moduleId } = useParams();
   const navigate = useNavigate();
-  const quiz = mockQuizzes[moduleId];
+
+  const [quiz, setQuiz] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
-  const [submitted] = useState(false);
 
-  if (!quiz) {
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      try {
+        setLoading(true);
+        const data = await getModuleQuiz(moduleId);
+        setQuiz(data);
+      } catch (err) {
+        setError("Quiz not found.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchQuiz();
+  }, [moduleId]);
+
+  if (loading) {
     return (
       <PageLayout>
-        <div>Quiz not found.</div>
+        <div>Loading quiz...</div>
+      </PageLayout>
+    );
+  }
+
+  if (error || !quiz) {
+    return (
+      <PageLayout>
+        <div>{error || "Quiz not found."}</div>
       </PageLayout>
     );
   }
@@ -101,11 +53,11 @@ function Quiz() {
   const isLast = currentIndex === totalQuestions - 1;
   const progress = ((currentIndex + 1) / totalQuestions) * 100;
 
+  // keyed by question INDEX, not an id string — matches the order the backend expects answers in
   const handleOptionSelect = (optionIndex) => {
-    if (submitted) return;
     setSelectedAnswers((prev) => ({
       ...prev,
-      [currentQuestion.id]: optionIndex,
+      [currentIndex]: optionIndex,
     }));
   };
 
@@ -121,29 +73,34 @@ function Quiz() {
     }
   };
 
-  const handleSubmit = () => {
-    let correct = 0;
-    quiz.questions.forEach((q) => {
-      if (selectedAnswers[q.id] === q.correctAnswer) {
-        correct++;
-      }
-    });
-    const xpEarned = correct * 10;
-    navigate("/score", {
-      state: {
-        score: correct,
-        total: totalQuestions,
-        xpEarned,
-        moduleTitle: quiz.moduleTitle,
-        moduleId,
-      },
-    });
+  const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+
+    // build an ordered array [answerForQ0, answerForQ1, ...] as the backend expects
+    const answersArray = quiz.questions.map((_, i) => selectedAnswers[i]);
+
+    try {
+      const result = await submitQuiz(quiz.quizId, answersArray);
+      navigate("/score", {
+        state: {
+          score: result.correctCount,
+          total: result.totalQuestions,
+          scorePercent: result.score,
+          passed: result.passed,
+          xpEarned: result.xpEarned,
+          readyToAdvance: result.readyToAdvance,
+          moduleId,
+        },
+      });
+    } catch (err) {
+      alert("Failed to submit quiz. Please try again.");
+      setSubmitting(false);
+    }
   };
 
-  const isAnswered = selectedAnswers[currentQuestion.id] !== undefined;
-  const allAnswered = quiz.questions.every(
-    (q) => selectedAnswers[q.id] !== undefined
-  );
+  const isAnswered = selectedAnswers[currentIndex] !== undefined;
+  const allAnswered = quiz.questions.every((_, i) => selectedAnswers[i] !== undefined);
 
   return (
     <PageLayout>
@@ -153,7 +110,6 @@ function Quiz() {
         <div className={styles.header}>
           <div>
             <h2 className={styles.title}>🧠 Quiz</h2>
-            <p className={styles.moduleTitle}>{quiz.moduleTitle}</p>
           </div>
           <span className={styles.questionCount}>
             {currentIndex + 1} / {totalQuestions}
@@ -176,9 +132,7 @@ function Quiz() {
               <button
                 key={index}
                 className={`${styles.option} ${
-                  selectedAnswers[currentQuestion.id] === index
-                    ? styles.selected
-                    : ""
+                  selectedAnswers[currentIndex] === index ? styles.selected : ""
                 }`}
                 onClick={() => handleOptionSelect(index)}
               >
@@ -205,9 +159,9 @@ function Quiz() {
             <button
               className={styles.submitBtn}
               onClick={handleSubmit}
-              disabled={!allAnswered}
+              disabled={!allAnswered || submitting}
             >
-              Submit Quiz ✓
+              {submitting ? "Submitting..." : "Submit Quiz ✓"}
             </button>
           ) : (
             <button
@@ -222,13 +176,13 @@ function Quiz() {
 
         {/* Question Dots */}
         <div className={styles.dots}>
-          {quiz.questions.map((q, index) => (
+          {quiz.questions.map((_, index) => (
             <button
               key={index}
               className={`${styles.dot} ${
                 index === currentIndex ? styles.dotActive : ""
               } ${
-                selectedAnswers[q.id] !== undefined ? styles.dotAnswered : ""
+                selectedAnswers[index] !== undefined ? styles.dotAnswered : ""
               }`}
               onClick={() => setCurrentIndex(index)}
             />

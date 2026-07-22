@@ -1,12 +1,37 @@
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { getCurrentUser } from "../../api/authApi";
 import styles from "./Score.module.css";
 
 function Score() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { score, total, xpEarned, moduleTitle, moduleId } = location.state || {};
+  const { refreshUser } = useAuth();
+  const {
+    score,
+    total,
+    scorePercent,
+    passed,
+    xpEarned,
+    readyToAdvance,
+    moduleId,
+  } = location.state || {};
 
-  if (!score && score !== 0) {
+  useEffect(() => {
+    const syncUser = async () => {
+      try {
+        const freshUser = await getCurrentUser();
+        refreshUser(freshUser.user || freshUser);
+      } catch (err) {
+        // fail silently — not critical to the page working
+      }
+    };
+    syncUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (score === undefined || score === null) {
     return (
       <div className={styles.errorPage}>
         <p>No score data found.</p>
@@ -15,7 +40,7 @@ function Score() {
     );
   }
 
-  const percentage = Math.round((score / total) * 100);
+  const percentage = scorePercent ?? Math.round((score / total) * 100);
 
   const getResult = () => {
     if (percentage >= 80) return { emoji: "🏆", label: "Excellent!", color: "#16a34a" };
@@ -34,7 +59,6 @@ function Score() {
         <h2 className={styles.resultLabel} style={{ color: result.color }}>
           {result.label}
         </h2>
-        <p className={styles.moduleTitle}>{moduleTitle}</p>
 
         {/* Score Circle */}
         <div className={styles.scoreCircle}>
@@ -59,6 +83,14 @@ function Score() {
             <span className={styles.statLabel}>Correct</span>
           </div>
         </div>
+
+        {passed && (
+          <p className={styles.moduleTitle}>
+            {readyToAdvance
+              ? "🎉 You're ready to move on to the next concept!"
+              : "Module completed — keep going!"}
+          </p>
+        )}
 
         {/* Actions */}
         <div className={styles.actions}>

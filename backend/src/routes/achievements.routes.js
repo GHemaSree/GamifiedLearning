@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { submitQuiz } = require('../controllers/quiz.controller');
+const { getMyBadges } = require('../controllers/badge.controller');
 const { protect } = require('../middleware/auth.middleware');
 
-router.post('/:id/submit', protect, submitQuiz);
+router.get('/', protect, getMyBadges);
 
 module.exports = router;

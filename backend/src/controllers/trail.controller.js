@@ -3,7 +3,8 @@ const Module = require('../models/Module');
 const Topic = require('../models/Topic');
 const Progress = require('../models/Progress');
 const Mastery = require('../models/Mastery');
-const { generateModuleContent } = require('../services/ai.service');
+const Quiz = require('../models/Quiz');
+const { generateModuleContent, generateQuiz } = require('../services/ai.service');
 
 // @desc    Create (or fetch existing) trail for a topic — no AI call, no modules yet
 // @route   POST /trails
@@ -35,7 +36,7 @@ exports.createTrail = async (req, res) => {
         user: req.user._id,
         topic: topic._id,
         title: topic.title,
-        status: 'active', // no AI call here, so nothing can fail — safe to go active immediately
+        status: 'active',
       });
     } catch (dupErr) {
       if (dupErr.code === 11000) {
@@ -47,11 +48,12 @@ exports.createTrail = async (req, res) => {
 
     return res.status(201).json({ trail });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
 
-// @desc    Generate the next concept's module for a trail (triggered by clicking a concept)
+// @desc    Generate the next concept's module + quiz for a trail (triggered by clicking a concept)
 // @route   POST /trails/:id/next-module
 // @access  Private
 exports.generateNextModule = async (req, res) => {
@@ -63,10 +65,20 @@ exports.generateNextModule = async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const sortedConcepts = [...trail.topic.concepts].sort((a, b) => a.order - b.order);
-    const existingModules = await Module.find({ trail: trail._id });
-    const existingConceptNames = new Set(existingModules.map((m) => m.concept));
+    const existingModules = await Module.find({ trail: trail._id }).sort({ order: 1 });
 
+    // Block generating ahead — only one module can be active/incomplete at a time
+    if (existingModules.length > 0) {
+      const lastModule = existingModules[existingModules.length - 1];
+      const lastProgress = await Progress.findOne({ trail: trail._id, module: lastModule._id });
+      if (lastProgress && lastProgress.completionStatus !== 'completed') {
+        // Don't generate a new one — just return the still-incomplete one
+        return res.status(200).json({ module: lastModule });
+      }
+    }
+
+    const sortedConcepts = [...trail.topic.concepts].sort((a, b) => a.order - b.order);
+    const existingConceptNames = new Set(existingModules.map((m) => m.concept));
     const nextConcept = sortedConcepts.find((c) => !existingConceptNames.has(c.name));
 
     if (!nextConcept) {
@@ -92,6 +104,9 @@ exports.generateNextModule = async (req, res) => {
         order: existingModules.length,
       });
 
+      const quizQuestions = await generateQuiz(trail.topic.title, nextConcept.name, 'beginner');
+      await Quiz.create({ module: module._id, questions: quizQuestions });
+
       await Progress.create({
         user: req.user._id,
         trail: trail._id,
@@ -107,20 +122,21 @@ exports.generateNextModule = async (req, res) => {
 
       return res.status(201).json({ module });
     } catch (aiErr) {
+      console.error('Module generation failed:',aiErr);
       return res.status(502).json({ message: 'Module generation failed. Please try again.' });
     }
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
-
 // @desc    Get all trails for the logged-in user
 // @route   GET /trails
 // @access  Private
 exports.getMyTrails = async (req, res) => {
   try {
     const trails = await Trail.find({ user: req.user._id })
-      .populate('topic', 'title icon level')
+      .populate('topic', 'title icon level concepts')
       .sort({ createdAt: -1 });
 
     const progressCounts = await Progress.aggregate([
@@ -128,7 +144,6 @@ exports.getMyTrails = async (req, res) => {
       {
         $group: {
           _id: '$trail',
-          total: { $sum: 1 },
           completed: { $sum: { $cond: [{ $eq: ['$completionStatus', 'completed'] }, 1, 0] } },
         },
       },
@@ -137,8 +152,9 @@ exports.getMyTrails = async (req, res) => {
     const countsMap = new Map(progressCounts.map((p) => [p._id.toString(), p]));
 
     const trailsWithProgress = trails.map((trail) => {
-      const counts = countsMap.get(trail._id.toString()) || { total: 0, completed: 0 };
-      const progressPercent = counts.total > 0 ? Math.round((counts.completed / counts.total) * 100) : 0;
+      const counts = countsMap.get(trail._id.toString()) || { completed: 0 };
+      const totalConcepts = trail.topic.concepts.length;
+      const progressPercent = totalConcepts > 0 ? Math.round((counts.completed / totalConcepts) * 100) : 0;
 
       return {
         _id: trail._id,
@@ -147,13 +163,14 @@ exports.getMyTrails = async (req, res) => {
         topic: trail.topic,
         progressPercent,
         modulesCompleted: counts.completed,
-        modulesTotal: counts.total,
+        modulesTotal: totalConcepts, // now the full curriculum length, matching Trail page's own math
         updatedAt: trail.updatedAt,
       };
     });
 
     res.status(200).json(trailsWithProgress);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -178,6 +195,7 @@ exports.getTrailById = async (req, res) => {
       concepts: trail.topic.concepts,
     });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -191,6 +209,7 @@ exports.getTrailByTopic = async (req, res) => {
     if (!trail) return res.status(404).json({ message: 'No trail started for this topic yet' });
     res.status(200).json(trail);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };

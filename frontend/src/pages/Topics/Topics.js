@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
 import { getTopics } from "../../api/topicsApi";
-import { getTrailByTopic, createTrail } from "../../api/trailApi";
+import { getTrailByTopic } from "../../api/trailApi";
 import styles from "./Topics.module.css";
 
 const levelColors = {
@@ -39,17 +39,12 @@ function Topics() {
       (topic.description || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleTopicClick = async (topicId) => {
+ const handleTopicClick = async (topicId) => {
   try {
     const existingTrail = await getTrailByTopic(topicId);
     navigate(`/trail/${existingTrail._id}`);
   } catch (err) {
-    try {
-      const data = await createTrail(topicId);
-      navigate(`/trail/${data.trail._id}`);
-    } catch (createErr) {
-      alert("Failed to open this topic. Please try again.");
-    }
+    navigate(`/trail/preview-${topicId}`); // fake "trail id" that signals explore-only mode
   }
 };
 

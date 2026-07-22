@@ -26,10 +26,15 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("token");
   };
 
+  const refreshUser = (userData) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
+
   const isAuthenticated = !!token;
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, token, login, logout, refreshUser, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

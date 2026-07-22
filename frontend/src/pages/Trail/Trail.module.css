@@ -160,3 +160,14 @@
 .statusLabel {
   font-size: var(--font-size-sm);
 }
+
+.completionBanner {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: white;
+  padding: var(--space-lg) var(--space-xl);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(22, 163, 74, 0.3);
+}
