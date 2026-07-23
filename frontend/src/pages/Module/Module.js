@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
-import { getModuleById } from "../../api/moduleApi";
+import { getModuleById, getModuleContent } from "../../api/moduleApi";
 import styles from "./Module.module.css";
 
 function Module() {
   const { moduleId } = useParams();
   const navigate = useNavigate();
   const [module, setModule] = useState(null);
+  const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [contentLoading, setContentLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -25,6 +27,22 @@ function Module() {
     };
     fetchModule();
   }, [moduleId]);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        setContentLoading(true);
+        const data = await getModuleContent(moduleId);
+        setContent(data);
+      } catch (err) {
+        console.error("Failed to load content:", err);
+        setContent(null);
+      } finally {
+        setContentLoading(false);
+      }
+    };
+    if (module) fetchContent();
+  }, [module, moduleId]);
 
   if (loading) {
     return (
@@ -45,7 +63,6 @@ function Module() {
   return (
     <PageLayout>
       <div className={styles.page}>
-
         {/* Header */}
         <div className={styles.header}>
           <button className={styles.backBtn} onClick={() => navigate(-1)}>
@@ -63,30 +80,73 @@ function Module() {
           </div>
         </div>
 
-        {/* Objective */}
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>🎯 Learning Objective</h3>
-          <p className={styles.cardText}>{module.objective}</p>
-        </div>
+        {contentLoading ? (
+          <div className={styles.card}>
+            <p className={styles.cardText} style={{ textAlign: "center" }}>
+              Generating personalised content…
+            </p>
+          </div>
+        ) : content ? (
+          <>
+            {content.introduction && (
+              <div className={styles.card}>
+                <h3 className={styles.cardTitle}>📖 Introduction</h3>
+                <p className={styles.cardText}>{content.introduction}</p>
+              </div>
+            )}
 
-        {/* Key Points */}
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>💡 Key Concepts</h3>
-          <ul className={styles.keyPoints}>
-            {module.keyPoints.map((point, index) => (
-              <li key={index} className={styles.keyPoint}>
-                <span className={styles.bullet}>→</span>
-                <span>{point}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+            <div className={styles.card}>
+              <h3 className={styles.cardTitle}>🎯 Learning Objective</h3>
+              <p className={styles.cardText}>{content.objective}</p>
+            </div>
 
-        {/* Summary */}
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>📝 Summary</h3>
-          <p className={styles.cardText}>{module.summary}</p>
-        </div>
+            {content.content && (
+              <div className={styles.card}>
+                <h3 className={styles.cardTitle}>📚 Content</h3>
+                <div className={styles.cardText} style={{ whiteSpace: "pre-wrap" }}>
+                  {content.content}
+                </div>
+              </div>
+            )}
+
+            <div className={styles.card}>
+              <h3 className={styles.cardTitle}>💡 Key Concepts</h3>
+              <ul className={styles.keyPoints}>
+                {(content.keyPoints || []).map((point, index) => (
+                  <li key={index} className={styles.keyPoint}>
+                    <span className={styles.bullet}>→</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {content.examples && content.examples.length > 0 && (
+              <div className={styles.card}>
+                <h3 className={styles.cardTitle}>🧪 Examples</h3>
+                <ul className={styles.keyPoints}>
+                  {content.examples.map((example, index) => (
+                    <li key={index} className={styles.keyPoint}>
+                      <span className={styles.bullet}>•</span>
+                      <span>{example}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className={styles.card}>
+              <h3 className={styles.cardTitle}>📝 Summary</h3>
+              <p className={styles.cardText}>{content.summary}</p>
+            </div>
+          </>
+        ) : (
+          <div className={styles.card}>
+            <p className={styles.cardText} style={{ textAlign: "center" }}>
+              Content could not be generated. Please try again later.
+            </p>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className={styles.actions}>
@@ -103,7 +163,6 @@ function Module() {
             🧠 Start Quiz
           </button>
         </div>
-
       </div>
     </PageLayout>
   );

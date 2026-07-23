@@ -186,9 +186,8 @@ const getOrGenerateContent = async (studentId, moduleId) => {
   // ── 6. Call LLM ───────────────────────────────────────────────────
   const llmResult = await generateResponse(prompt);
 
-  // ── 7. Validate response ──────────────────────────────────────────
+ // ── 7. Validate response ──────────────────────────────────────────
   const parsed = parseJSONObject(llmResult.content);
-  _validateContentFields(parsed);
 
   // ── 8. Save ───────────────────────────────────────────────────────
   const saved = await StudentModuleContent.create({

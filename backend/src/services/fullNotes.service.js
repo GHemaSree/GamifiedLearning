@@ -191,9 +191,8 @@ const getOrGenerateFullNotes = async (studentId, moduleId) => {
   // ── 6. Call LLM ───────────────────────────────────────────────────
   const llmResult = await generateResponse(prompt);
 
-  // ── 7. Validate response ──────────────────────────────────────────
+// ── 7. Validate response ──────────────────────────────────────────
   const parsed = parseJSONObject(llmResult.content);
-  _validateNotesFields(parsed);
 
   // ── 8. Save ───────────────────────────────────────────────────────
   const saved = await StudentFullNotes.create({

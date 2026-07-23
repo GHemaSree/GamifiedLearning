@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
-import { getModuleById } from "../../api/moduleApi";
+import { getModuleById, getFullNotes } from "../../api/moduleApi";
 import styles from "./Notes.module.css";
 
 function Notes() {
   const { moduleId } = useParams();
   const navigate = useNavigate();
+  const [moduleInfo, setModuleInfo] = useState(null);
   const [notes, setNotes] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,8 +16,12 @@ function Notes() {
     const fetchNotes = async () => {
       try {
         setLoading(true);
-        const data = await getModuleById(moduleId);
-        setNotes(data);
+        const [moduleData, notesData] = await Promise.all([
+          getModuleById(moduleId),
+          getFullNotes(moduleId),
+        ]);
+        setModuleInfo(moduleData);
+        setNotes(notesData);
       } catch (err) {
         setError("Notes not found.");
       } finally {
@@ -34,7 +39,7 @@ function Notes() {
     );
   }
 
-  if (error || !notes) {
+  if (error || !notes || !moduleInfo) {
     return (
       <PageLayout>
         <div>{error || "Notes not found."}</div>
@@ -51,12 +56,12 @@ function Notes() {
           <button className={styles.backBtn} onClick={() => navigate(-1)}>
             ← Back to Module
           </button>
-          <p className={styles.trailTitle}>{notes.trailTitle}</p>
+          <p className={styles.trailTitle}>{moduleInfo.trailTitle}</p>
         </div>
 
         {/* Title */}
         <div className={styles.titleRow}>
-          <span className={styles.icon}>{notes.icon || "📘"}</span>
+          <span className={styles.icon}>{moduleInfo.icon || "📘"}</span>
           <div>
             <h2 className={styles.title}>{notes.title}</h2>
             <p className={styles.subtitle}>Full Notes</p>
@@ -75,6 +80,21 @@ function Notes() {
             </div>
           ))}
         </div>
+{/* Bonus Challenges */}
+        {notes.gamifiedExamples && notes.gamifiedExamples.length > 0 && (
+          <div className={styles.gamifiedSection}>
+            <h3 className={styles.gamifiedTitle}>🎮 Bonus Challenges</h3>
+            <div className={styles.gamifiedList}>
+              {notes.gamifiedExamples.map((example, index) => (
+                <div key={index} className={styles.gamifiedCard}>
+                  <span className={styles.gamifiedBadge}>Quest {index + 1}</span>
+                  <p className={styles.gamifiedText}>{example}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
 
         {/* Bottom Action */}
         <div className={styles.actions}>

@@ -82,7 +82,9 @@ const _extractJSONSubstring = (text) => {
 /**
  * Fix common JSON issues that LLMs produce.
  * - Trailing commas before ] or }
- * - Single quotes instead of double quotes (simple cases)
+ * - Raw control characters (literal newlines/tabs/carriage returns)
+ *   inside string values, which the LLM sometimes emits instead of
+ *   proper \n / \t escape sequences
  *
  * @param {string} jsonStr – A candidate JSON string
  * @returns {string}       – The cleaned JSON string
@@ -91,7 +93,45 @@ const _sanitiseJSON = (jsonStr) => {
   // Remove trailing commas: ,] or ,}
   let cleaned = jsonStr.replace(/,\s*([}\]])/g, '$1');
 
-  return cleaned;
+  // Escape raw control characters found INSIDE string literals only.
+  // We track whether we're inside a string via a simple quote-toggle
+  // scan (respecting backslash-escapes) so we never touch the JSON
+  // structure itself — only string contents.
+  let result = '';
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < cleaned.length; i++) {
+    const char = cleaned[i];
+
+    if (escaped) {
+      result += char;
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      result += char;
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      result += char;
+      continue;
+    }
+
+    if (inString) {
+      if (char === '\n') { result += '\\n'; continue; }
+      if (char === '\r') { result += '\\r'; continue; }
+      if (char === '\t') { result += '\\t'; continue; }
+    }
+
+    result += char;
+  }
+
+  return result;
 };
 
 // ── Public API ──────────────────────────────────────────────────────
