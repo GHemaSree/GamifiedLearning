@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
 import { getModuleById, getFullNotes } from "../../api/moduleApi";
@@ -11,9 +11,14 @@ function Notes() {
   const [notes, setNotes] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const fetchedNotesFor = useRef(null);
 
   useEffect(() => {
-    const fetchNotes = async () => {
+    if (!moduleId) return;
+    if (fetchedNotesFor.current === moduleId) return;
+    fetchedNotesFor.current = moduleId;
+
+    const fetchData = async () => {
       try {
         setLoading(true);
         const [moduleData, notesData] = await Promise.all([
@@ -23,12 +28,17 @@ function Notes() {
         setModuleInfo(moduleData);
         setNotes(notesData);
       } catch (err) {
-        setError("Notes not found.");
+        console.error("Failed to load full notes:", err);
+        setError(
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Notes not found."
+        );
       } finally {
         setLoading(false);
       }
     };
-    fetchNotes();
+    fetchData();
   }, [moduleId]);
 
   if (loading) {
@@ -80,7 +90,8 @@ function Notes() {
             </div>
           ))}
         </div>
-{/* Bonus Challenges */}
+
+        {/* Bonus Challenges */}
         {notes.gamifiedExamples && notes.gamifiedExamples.length > 0 && (
           <div className={styles.gamifiedSection}>
             <h3 className={styles.gamifiedTitle}>🎮 Bonus Challenges</h3>
@@ -94,7 +105,6 @@ function Notes() {
             </div>
           </div>
         )}
-
 
         {/* Bottom Action */}
         <div className={styles.actions}>

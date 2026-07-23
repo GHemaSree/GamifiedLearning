@@ -98,7 +98,7 @@ const _getWeakConcepts = async (studentId, topicId) => {
  */
 const getOrGenerateContent = async (studentId, moduleId) => {
   // ── 1. Cache check ────────────────────────────────────────────────
-  const existing = await StudentModuleContent.findOne({
+const existing = await StudentModuleContent.findOne({
     studentId,
     moduleId,
   });

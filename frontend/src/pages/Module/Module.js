@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
 import { getModuleById, getModuleContent } from "../../api/moduleApi";
@@ -12,6 +12,8 @@ function Module() {
   const [loading, setLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
   const [error, setError] = useState(null);
+  const fetchedContentFor = useRef(null);
+
 
   useEffect(() => {
     const fetchModule = async () => {
@@ -20,8 +22,13 @@ function Module() {
         const data = await getModuleById(moduleId);
         setModule(data);
       } catch (err) {
-        setError("Module not found.");
-      } finally {
+  console.error("Failed to load module:", err);
+  setError(
+    err.response?.data?.message ||
+    err.response?.data?.error ||
+    "Module not found."
+  );
+} finally {
         setLoading(false);
       }
     };
@@ -29,6 +36,10 @@ function Module() {
   }, [moduleId]);
 
   useEffect(() => {
+    if (!module) return;
+    if (fetchedContentFor.current === moduleId) return;
+    fetchedContentFor.current = moduleId;
+
     const fetchContent = async () => {
       try {
         setContentLoading(true);
@@ -41,7 +52,7 @@ function Module() {
         setContentLoading(false);
       }
     };
-    if (module) fetchContent();
+    fetchContent();
   }, [module, moduleId]);
 
   if (loading) {
