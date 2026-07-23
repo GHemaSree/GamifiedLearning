@@ -25,7 +25,7 @@ const chatCompletion = async (messages, options = {}) => {
     messages,
     model:       options.model       || llmConfig.model,
     temperature: options.temperature ?? 0.7,
-    max_tokens:  options.maxTokens   ?? 4096,
+    max_tokens:  options.maxTokens   ?? 2000,
   });
 
   return response;
