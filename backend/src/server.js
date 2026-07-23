@@ -31,6 +31,7 @@ app.use('/progress', require('./routes/progress.routes'));
 app.use('/profile', require('./routes/profile.routes'));
 app.use('/recommendations', require('./routes/recommendations.routes'));
 app.use('/achievements', require('./routes/achievements.routes'));
+app.use('/api/ai', require('./routes/ai.routes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
