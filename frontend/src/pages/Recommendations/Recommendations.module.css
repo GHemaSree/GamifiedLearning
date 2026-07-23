@@ -281,6 +281,17 @@
   border-radius: 999px;
 }
 
+.confidenceBadge {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-success);
+  background-color: #f0fdf4;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 999px;
+}
+
+
+
 .nextArrow {
   color: var(--color-primary);
   font-weight: 700;

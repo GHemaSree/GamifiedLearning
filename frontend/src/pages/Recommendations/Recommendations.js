@@ -141,20 +141,27 @@ function Recommendations() {
           {nextTopics.length === 0 ? (
             <p>Complete a topic and we'll suggest what to learn next.</p>
           ) : (
-            <div className={styles.revisionList}>
+            <div className={styles.nextList}>
               {nextTopics.map((topic, i) => (
                 <div
                   key={i}
-                  className={styles.revisionCard}
+                  className={styles.nextCard}
                   onClick={() => topic.topicId && navigate(`/topics`)}
                 >
-                  <div className={styles.revisionIcon}>{topic.icon}</div>
-                  <div className={styles.revisionInfo}>
-                    <p className={styles.revisionTitle}>{topic.title}</p>
-                    <p className={styles.revisionTrail}>{topic.reason}</p>
+                  <div className={styles.nextIcon}>{topic.icon}</div>
+                  <div className={styles.nextInfo}>
+                    <p className={styles.nextTitle}>{topic.title}</p>
+                    <p className={styles.nextCategory}>{topic.category}</p>
+                    <p className={styles.nextReason}>{topic.reason}</p>
                   </div>
-                  <div className={styles.revisionScore}>
-                    <span className={styles.scoreBadge}>{topic.level}</span>
+                  <div className={styles.nextMeta}>
+                    <span className={styles.levelBadge}>{topic.level}</span>
+                    {topic.confidence != null && (
+                      <span className={styles.confidenceBadge}>
+                        {topic.confidence}% 
+                      </span>
+                    )}
+                    <span className={styles.nextArrow}>→</span>
                   </div>
                 </div>
               ))}
