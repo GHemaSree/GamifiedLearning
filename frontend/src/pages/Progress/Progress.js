@@ -21,6 +21,7 @@ function Progress() {
   const { user } = useAuth();
   const [trails, setTrails] = useState([]);
   const [quizStats, setQuizStats] = useState({ totalQuizzesTaken: 0, averageScore: 0 });
+  const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -37,6 +38,7 @@ function Progress() {
           totalQuizzesTaken: progressData.totalQuizzesTaken,
           averageScore: progressData.averageScore,
         });
+        setRecentActivity(progressData.recentActivity || []);
       } catch (err) {
         setError("Failed to load progress.");
       } finally {
@@ -147,10 +149,42 @@ function Progress() {
           </div>
         </div>
 
-        {/* Recent Activity — placeholder until further built */}
+        {/* Recent Activity */}
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>Recent Activity</h3>
-          <p>Activity tracking coming soon.</p>
+          {recentActivity.length === 0 ? (
+            <p>No activity yet — complete a module or take a quiz to get started.</p>
+          ) : (
+            <div className={styles.activityList}>
+              {recentActivity.map((activity, i) => (
+                <div key={i} className={styles.activityCard}>
+                  <div className={styles.activityIcon}>
+                    {activity.type === "quiz_taken" ? "🧠" : "📘"}
+                  </div>
+                  <div className={styles.activityInfo}>
+                    {activity.type === "quiz_taken" ? (
+                      <>
+                        <p className={styles.activityTitle}>
+                          Took Quiz: {activity.moduleTitle}
+                        </p>
+                        <p className={styles.activityMeta}>
+                          Score: {activity.score}% {activity.passed ? "· Passed" : "· Not Passed"}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className={styles.activityTitle}>
+                          Completed: {activity.moduleTitle}
+                        </p>
+                        <p className={styles.activityMeta}>{activity.trailTitle}</p>
+                      </>
+                    )}
+                  </div>
+                  <span className={styles.activityTime}>{formatTimeAgo(activity.timestamp)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>
