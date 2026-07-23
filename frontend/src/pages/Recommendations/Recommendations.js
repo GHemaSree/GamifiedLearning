@@ -1,29 +1,43 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
-import { getRecommendations } from "../../api/recommendationsApi";
+import { getRecommendations, refreshRecommendations } from "../../api/recommendationsApi";
 import styles from "./Recommendations.module.css";
 
 function Recommendations() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      try {
-        setLoading(true);
-        const result = await getRecommendations();
-        setData(result);
-      } catch (err) {
-        setError("Failed to load recommendations.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRecommendations();
+  const fetchRecommendations = useCallback(async () => {
+    try {
+      setLoading(true);
+      const result = await getRecommendations();
+      setData(result);
+    } catch (err) {
+      setError("Failed to load recommendations.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchRecommendations();
+  }, [fetchRecommendations]);
+
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      const result = await refreshRecommendations();
+      setData(result);
+    } catch (err) {
+      setError("Failed to refresh recommendations.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const getMasteryColor = (mastery) => {
     if (mastery >= 70) return "#16a34a";
@@ -36,6 +50,7 @@ function Recommendations() {
 
   const conceptsToRevise = data?.conceptsToRevise || [];
   const suggestedRevision = data?.suggestedRevision || [];
+  const nextTopics = data?.nextTopics || [];
 
   return (
     <PageLayout>
@@ -49,7 +64,7 @@ function Recommendations() {
           </p>
         </div>
 
-        {/* Concepts to Revise — real data */}
+        {/* Concepts to Revise */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>⚠️ Concepts to Revise</h3>
@@ -86,7 +101,7 @@ function Recommendations() {
           </div>
         </div>
 
-        {/* Suggested Revision — real endpoint, empty until Week 3 */}
+        {/* Suggested Revision */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>🔄 Suggested Revision</h3>
@@ -117,13 +132,42 @@ function Recommendations() {
           )}
         </div>
 
-        {/* Recommended Next Topics — not built yet, on hold */}
+        {/* Recommended Next Topics — AI powered */}
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>🚀 Recommended Next Topics</h3>
             <span className={styles.sectionBadge}>AI powered suggestions</span>
           </div>
-          <p>Coming soon.</p>
+          {nextTopics.length === 0 ? (
+            <p>Complete a topic and we'll suggest what to learn next.</p>
+          ) : (
+            <div className={styles.revisionList}>
+              {nextTopics.map((topic, i) => (
+                <div
+                  key={i}
+                  className={styles.revisionCard}
+                  onClick={() => topic.topicId && navigate(`/topics`)}
+                >
+                  <div className={styles.revisionIcon}>{topic.icon}</div>
+                  <div className={styles.revisionInfo}>
+                    <p className={styles.revisionTitle}>{topic.title}</p>
+                    <p className={styles.revisionTrail}>{topic.reason}</p>
+                  </div>
+                  <div className={styles.revisionScore}>
+                    <span className={styles.scoreBadge}>{topic.level}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            className={styles.quizBtn}
+            style={{ marginTop: "12px" }}
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            {refreshing ? "Refreshing..." : "🔄 Refresh Suggestions"}
+          </button>
         </div>
 
       </div>
