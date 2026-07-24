@@ -91,7 +91,7 @@
 .statLabel {
   font-size: 11px;
   font-weight: 700;
-  color: var(--color-text-secondary);
+  color: rgba(255, 255, 255, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -99,7 +99,7 @@
 .statDivider {
   width: 1px;
   height: 36px;
-  background: var(--color-border);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Sections */
