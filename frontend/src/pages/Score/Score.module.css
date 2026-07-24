@@ -3,14 +3,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #f5f4ff 0%, var(--color-bg) 100%);
+  background: radial-gradient(circle at center, #111827 0%, var(--color-bg) 100%);
   padding: var(--space-lg);
 }
 
 .card {
   background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(139, 92, 246, 0.1);
   padding: var(--space-2xl);
   width: 100%;
   max-width: 480px;
@@ -23,43 +24,54 @@
 
 .resultEmoji {
   font-size: 64px;
+  animation: bounceEmoji 1.5s infinite ease-in-out alternate;
+}
+
+@keyframes bounceEmoji {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-8px); }
 }
 
 .resultLabel {
   font-size: var(--font-size-xl);
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
 .moduleTitle {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
+  font-weight: 600;
   margin-top: calc(-1 * var(--space-sm));
 }
 
 /* Score Circle */
 .scoreCircle {
-  width: 120px;
-  height: 120px;
+  width: 130px;
+  height: 130px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
-  gap: var(--space-xs);
+  box-shadow: var(--glow-primary), var(--shadow-md);
+  gap: 2px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
 }
 
 .scoreNumber {
   font-size: var(--font-size-2xl);
-  font-weight: 700;
+  font-weight: 800;
   color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .scoreTotal {
   font-size: var(--font-size-lg);
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   align-self: flex-end;
-  padding-bottom: 6px;
+  padding-bottom: 8px;
+  font-weight: 700;
 }
 
 /* Stats */
@@ -67,11 +79,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-lg);
-  background-color: var(--color-bg);
+  background-color: var(--stat-box-bg);
+  border: 1px solid var(--color-border);
   padding: var(--space-md) var(--space-xl);
   border-radius: var(--radius-md);
   width: 100%;
   justify-content: center;
+  box-sizing: border-box;
 }
 
 .statItem {
@@ -79,17 +93,19 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-xs);
+  min-width: 60px;
 }
 
 .statValue {
   font-size: var(--font-size-md);
-  font-weight: 700;
-  color: var(--color-text-primary);
+  font-weight: 800;
+  color: var(--color-secondary);
 }
 
 .statLabel {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
 }
 
 .statDivider {
@@ -110,16 +126,16 @@
   padding: var(--space-md);
   border-radius: var(--radius-md);
   font-size: var(--font-size-md);
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   border: 2px solid var(--color-primary);
   color: var(--color-primary);
   background: transparent;
-  transition: background-color var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .retryBtn:hover {
-  background-color: #f5f4ff;
+  background-color: rgba(139, 92, 246, 0.1);
 }
 
 .dashboardBtn {
@@ -127,30 +143,34 @@
   padding: var(--space-md);
   border-radius: var(--radius-md);
   font-size: var(--font-size-md);
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   color: white;
   border: none;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
-  transition: transform var(--transition-fast);
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .dashboardBtn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--glow-primary);
 }
 
 .trailBtn {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
+  font-weight: 700;
   cursor: pointer;
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
+  background: none;
+  border: none;
   transition: color var(--transition-fast);
 }
 
 .trailBtn:hover {
-  color: var(--color-primary);
+  color: var(--color-secondary);
 }
 
 .errorPage {
@@ -160,4 +180,5 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-md);
-}
+  background-color: var(--color-bg);
+}

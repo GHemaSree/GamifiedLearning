@@ -34,13 +34,14 @@
 }
 
 .navItem:hover {
-  background-color: #f5f4ff;
+  background-color: var(--sidebar-hover-bg);
   color: var(--color-primary);
 }
 
 .active {
-  background-color: #eeecff;
+  background-color: var(--sidebar-active-bg);
   color: var(--color-primary);
+  box-shadow: inset 3px 0 0 var(--color-primary);
   font-weight: 600;
 }
 
@@ -68,14 +69,17 @@
   gap: var(--space-md);
   width: 100%;
   padding: var(--space-sm) var(--space-md);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
+  background: transparent;
   color: var(--color-danger);
   font-size: var(--font-size-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .logoutBtn:hover {
-  background-color: #fff5f5;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
 }

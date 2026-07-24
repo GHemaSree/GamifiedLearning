@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
-import { getModuleQuiz } from "../../api/moduleApi";
+import { useAuth } from "../../context/AuthContext";
+import { getModuleQuiz, getModuleById } from "../../api/moduleApi";
 import { submitQuiz } from "../../api/quizApi";
 import styles from "./Quiz.module.css";
 
 function Quiz() {
   const { moduleId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth(); // Need to import useAuth or wait, is useAuth imported? Let's check imports!
 
   const [quiz, setQuiz] = useState(null);
+  const [moduleData, setModuleData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -18,18 +21,28 @@ function Quiz() {
   const [selectedAnswers, setSelectedAnswers] = useState({});
 
   useEffect(() => {
-    const fetchQuiz = async () => {
+    const fetchQuizAndModule = async () => {
       try {
         setLoading(true);
-        const data = await getModuleQuiz(moduleId);
-        setQuiz(data);
+        // Load the critical quiz data first
+        const quizRes = await getModuleQuiz(moduleId);
+        setQuiz(quizRes);
+
+        // Load non-critical module meta details separately (fail silently if error)
+        try {
+          const moduleRes = await getModuleById(moduleId);
+          setModuleData(moduleRes);
+        } catch (moduleErr) {
+          console.error("Failed to load module details:", moduleErr);
+        }
       } catch (err) {
+        console.error("Failed to load quiz:", err);
         setError("Quiz not found.");
       } finally {
         setLoading(false);
       }
     };
-    fetchQuiz();
+    fetchQuizAndModule();
   }, [moduleId]);
 
   if (loading) {
@@ -67,6 +80,14 @@ function Quiz() {
     }
   };
 
+  const getBossName = () => {
+    return moduleData?.title ? `${moduleData.title} Guardian 👾` : "Syntax Overlord 👾";
+  };
+
+  const getPlayerName = () => {
+    return user?.name ? `${user.name.toUpperCase()} SHIELD` : "PLAYER SHIELD";
+  };
+
   const handlePrev = () => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
@@ -77,7 +98,6 @@ function Quiz() {
     if (submitting) return;
     setSubmitting(true);
 
-    // build an ordered array [answerForQ0, answerForQ1, ...] as the backend expects
     const answersArray = quiz.questions.map((_, i) => selectedAnswers[i]);
 
     try {
@@ -106,22 +126,49 @@ function Quiz() {
     <PageLayout>
       <div className={styles.page}>
 
-        {/* Header */}
+        {/* Boss Battle Arena Header */}
         <div className={styles.header}>
           <div>
-            <h2 className={styles.title}>🧠 Quiz</h2>
+            <span className={styles.bossBadge}>⚡ BOSS BATTLE</span>
+            <h2 className={styles.title}>{getBossName()}</h2>
           </div>
           <span className={styles.questionCount}>
-            {currentIndex + 1} / {totalQuestions}
+            Turn {currentIndex + 1} / {totalQuestions}
           </span>
         </div>
 
-        {/* Progress Bar */}
-        <div className={styles.progressBar}>
-          <div
-            className={styles.progressFill}
-            style={{ width: `${progress}%` }}
-          />
+        {/* Boss Arena HUD (HP bars) */}
+        <div className={styles.bossArena}>
+          <div className={styles.bossSection}>
+            <div className={styles.bossHeader}>
+              <span className={styles.bossLabel}>BOSS HP</span>
+              <span className={styles.bossHpText}>{Math.round(100 - progress)}%</span>
+            </div>
+            <div className={styles.bossHpBar}>
+              <div className={styles.bossHpFill} style={{ width: `${100 - progress}%` }} />
+            </div>
+          </div>
+
+          <div className={styles.versusDivider}>VS</div>
+
+          <div className={styles.playerSection}>
+            <div className={styles.playerHeader}>
+              <span className={styles.playerLabel}>{getPlayerName()}</span>
+              <span className={styles.playerHpText}>{Math.round(progress)}%</span>
+            </div>
+            <div className={styles.playerHpBar}>
+              <div className={styles.playerHpFill} style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Battle Log Dialog */}
+        <div className={styles.battleDialogue}>
+          {selectedAnswers[currentIndex] !== undefined ? (
+            <p className={styles.dialogueText}>⚔️ Striking with Choice {String.fromCharCode(65 + selectedAnswers[currentIndex])}! Ready your command...</p>
+          ) : (
+            <p className={styles.dialogueText}>💬 {getBossName().replace(" 👾", "")} challenges: "Answer this query or face runtime execution!"</p>
+          )}
         </div>
 
         {/* Question Card */}
@@ -152,7 +199,7 @@ function Quiz() {
             onClick={handlePrev}
             disabled={currentIndex === 0}
           >
-            ← Previous
+            ← Retreat
           </button>
 
           {isLast ? (
@@ -161,7 +208,7 @@ function Quiz() {
               onClick={handleSubmit}
               disabled={!allAnswered || submitting}
             >
-              {submitting ? "Submitting..." : "Submit Quiz ✓"}
+              {submitting ? "Submitting..." : "Submit Strike ⚔️"}
             </button>
           ) : (
             <button
@@ -169,7 +216,7 @@ function Quiz() {
               onClick={handleNext}
               disabled={!isAnswered}
             >
-              Next →
+              Strike & Advance →
             </button>
           )}
         </div>

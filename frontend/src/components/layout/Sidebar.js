@@ -3,11 +3,11 @@ import { useAuth } from "../../context/AuthContext";
 import styles from "./Sidebar.module.css";
 
 const navItems = [
-  { path: "/dashboard", icon: "🏠", label: "Dashboard" },
-  { path: "/topics", icon: "📚", label: "Topics" },
-  { path: "/progress", icon: "📊", label: "Progress" },
-  { path: "/recommendations", icon: "✨", label: "For You" },
-  { path: "/profile", icon: "👤", label: "Profile" },
+  { path: "/dashboard", icon: "🏠", label: "Home Base" },
+  { path: "/topics", icon: "🗺️", label: "World Map" },
+  { path: "/progress", icon: "🏆", label: "Achievements" },
+  { path: "/recommendations", icon: "✨", label: "Side Quests" },
+  { path: "/profile", icon: "👤", label: "Character" },
 ];
 
 function Sidebar() {

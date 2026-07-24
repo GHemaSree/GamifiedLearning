@@ -4,37 +4,74 @@
   gap: var(--space-xl);
 }
 
-/* Banner */
+/* Player Profile Banner */
 .banner {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  background: var(--banner-bg);
   border-radius: var(--radius-lg);
+  border: 1px solid var(--banner-border);
   padding: var(--space-xl);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  color: var(--banner-text);
+  box-shadow: var(--shadow-lg), 0 0 15px rgba(139, 92, 246, 0.15);
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+}
+
+.playerInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.avatarGlow {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--glow-primary);
+  flex-shrink: 0;
+}
+
+.avatarLetter {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
   color: white;
-  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .bannerGreeting {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--banner-text);
+  margin-bottom: 2px;
+}
+
+.rankTitle {
+  font-size: var(--font-size-sm);
   font-weight: 700;
+  color: var(--color-primary-light);
   margin-bottom: var(--space-xs);
 }
 
 .bannerSub {
   font-size: var(--font-size-sm);
-  opacity: 0.85;
+  color: var(--banner-subtext);
 }
 
 .statsRow {
   display: flex;
   align-items: center;
   gap: var(--space-lg);
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--stat-box-bg);
+  border: 1px solid var(--color-border);
   padding: var(--space-md) var(--space-xl);
   border-radius: var(--radius-md);
-  backdrop-filter: blur(4px);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .statItem {
@@ -42,22 +79,27 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-xs);
+  min-width: 80px;
 }
 
 .statValue {
   font-size: var(--font-size-lg);
-  font-weight: 700;
+  font-weight: 800;
+  color: var(--color-secondary);
 }
 
 .statLabel {
-  font-size: var(--font-size-sm);
-  opacity: 0.8;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .statDivider {
   width: 1px;
   height: 36px;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--color-border);
 }
 
 /* Sections */
@@ -77,13 +119,21 @@
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-text-primary);
+  letter-spacing: 0.5px;
 }
 
 .viewAll {
   font-size: var(--font-size-sm);
-  color: var(--color-primary);
-  font-weight: 600;
+  color: var(--color-primary-light);
+  font-weight: 700;
   cursor: pointer;
+  background: none;
+  border: none;
+  transition: color var(--transition-fast);
+}
+
+.viewAll:hover {
+  color: var(--color-secondary);
 }
 
 /* Trail Cards */
@@ -102,18 +152,21 @@
   gap: var(--space-md);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
-  transition: box-shadow var(--transition-fast);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
 }
 
 .trailCard:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), 0 0 10px rgba(139, 92, 246, 0.1);
+  transform: translateX(4px);
+  border-color: var(--color-primary);
 }
 
 .trailIcon {
-  font-size: 28px;
+  font-size: 24px;
   width: 48px;
   height: 48px;
-  background-color: #f5f4ff;
+  background-color: var(--icon-bg);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -129,14 +182,14 @@
 }
 
 .trailTitle {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text-primary);
   font-size: var(--font-size-md);
 }
 
 .trailCategory {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .progressBar {
@@ -149,21 +202,60 @@
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary));
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
   border-radius: 999px;
+  box-shadow: 0 0 6px var(--color-primary);
   transition: width var(--transition-base);
 }
 
 .trailPercent {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: var(--color-primary);
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  color: var(--color-secondary);
   flex-shrink: 0;
 }
 
-/* Achievements */
-.achievementRow {
+/* Empty State */
+.emptyState {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) 0;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border);
+  gap: var(--space-md);
+}
+
+.emptyText {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+}
+
+.startBtn {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.startBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--glow-primary);
+}
+
+/* Adventure Board (Achievements) */
+.achievementRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: var(--space-md);
 }
 
@@ -171,28 +263,34 @@
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-lg);
+  padding: var(--space-lg) var(--space-md);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-sm);
   box-shadow: var(--shadow-sm);
-  min-width: 100px;
-  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
 }
 
 .achievementCard:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-md), 0 0 10px rgba(6, 182, 212, 0.15);
+  transform: translateY(-4px);
+  border-color: var(--color-secondary);
 }
 
 .achievementIcon {
   font-size: 32px;
+  animation: floatIcon 3s infinite ease-in-out alternate;
+}
+
+@keyframes floatIcon {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-4px); }
 }
 
 .achievementLabel {
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-text-secondary);
+  font-weight: 700;
+  color: var(--color-text-primary);
   text-align: center;
 }
