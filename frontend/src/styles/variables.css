@@ -35,6 +35,12 @@
   --node-locked-bg: rgba(241, 245, 249, 0.8);
   --dialogue-bg: rgba(79, 70, 229, 0.05);
   --dialogue-text: var(--color-text-secondary);
+  --badge-warning-bg: #fff7ed;
+  --badge-warning-text: var(--color-warning);
+  --badge-primary-bg: #eeecff;
+  --badge-primary-text: var(--color-primary);
+  --badge-success-bg: #f0fdf4;
+  --badge-success-text: var(--color-success);
 
   /* Spacing */
   --space-xs: 4px;
@@ -107,6 +113,12 @@
   --node-locked-bg: rgba(21, 28, 44, 0.4);
   --dialogue-bg: #111625;
   --dialogue-text: #9ca3af;
+  --badge-warning-bg: rgba(245, 158, 11, 0.15);
+  --badge-warning-text: var(--color-warning);
+  --badge-primary-bg: rgba(139, 92, 246, 0.15);
+  --badge-primary-text: var(--color-primary-light);
+  --badge-success-bg: rgba(16, 185, 129, 0.15);
+  --badge-success-text: var(--color-success);
 
   /* Shadows & Glows - Dark Mode */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5);

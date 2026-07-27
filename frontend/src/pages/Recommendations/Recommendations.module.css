@@ -72,7 +72,7 @@
   font-size: 28px;
   width: 48px;
   height: 48px;
-  background-color: #fff7ed;
+  background-color: var(--icon-bg);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -159,7 +159,7 @@
   font-size: 28px;
   width: 48px;
   height: 48px;
-  background-color: #f5f4ff;
+  background-color: var(--icon-bg);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -193,8 +193,8 @@
 .scoreBadge {
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: var(--color-warning);
-  background-color: #fff7ed;
+  color: var(--badge-warning-text);
+  background-color: var(--badge-warning-bg);
   padding: var(--space-xs) var(--space-sm);
   border-radius: 999px;
 }
@@ -233,7 +233,7 @@
   font-size: 28px;
   width: 48px;
   height: 48px;
-  background-color: #f0fdf4;
+  background-color: var(--icon-bg);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -275,8 +275,8 @@
 .levelBadge {
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: var(--color-primary);
-  background-color: #eeecff;
+  color: var(--badge-primary-text);
+  background-color: var(--badge-primary-bg);
   padding: var(--space-xs) var(--space-sm);
   border-radius: 999px;
 }
@@ -284,8 +284,8 @@
 .confidenceBadge {
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: var(--color-success);
-  background-color: #f0fdf4;
+  color: var(--badge-success-text);
+  background-color: var(--badge-success-bg);
   padding: var(--space-xs) var(--space-sm);
   border-radius: 999px;
 }
