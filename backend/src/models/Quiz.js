@@ -10,9 +10,15 @@ const quizSchema = new mongoose.Schema(
     },
     questions: [
       {
-        question: { type: String, required: true },
-        options: { type: [String], required: true },
+        question:      { type: String, required: true },
+        options:       { type: [String], required: true },
         correctAnswer: { type: Number, required: true }, // index into options — NEVER sent to frontend
+        explanation:   { type: String, default: '' },
+        difficulty:    {
+          type: String,
+          enum: ['beginner', 'intermediate', 'advanced'],
+          default: 'beginner',
+        },
       },
     ],
   },

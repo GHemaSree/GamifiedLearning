@@ -7,6 +7,8 @@ const Mastery = require('../models/Mastery');
 const User = require('../models/User');
 const { getDKTPrediction } = require('../services/ai.service');
 const { checkAndAwardBadges } = require('../services/badge.service');
+const { getOrGenerateQuiz } = require('../services/quiz.service');
+const { ParseError } = require('../services/ai/responseParser');
 
 const PASS_THRESHOLD = 85;
 const LEVEL_THRESHOLDS = [0, 500, 1000, 2000, 3500, 5000];
@@ -49,27 +51,47 @@ const updateStreak = (user) => {
 
 exports.getQuizByModule = async (req, res) => {
   try {
-    const module = await Module.findById(req.params.id);
-    if (!module) return res.status(404).json({ message: 'Module not found' });
+    const moduleDoc = await Module.findById(req.params.id);
+    if (!moduleDoc) return res.status(404).json({ message: 'Module not found' });
 
-    const trail = await Trail.findById(module.trail);
+    const trail = await Trail.findById(moduleDoc.trail);
+    if (!trail) return res.status(404).json({ message: 'Trail not found' });
+
     if (trail.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const quiz = await Quiz.findOne({ module: module._id });
-    if (!quiz) return res.status(404).json({ message: 'Quiz not found for this module' });
+    const studentId = req.user._id;
+    console.log(`[quiz.controller] getQuizByModule — module=${req.params.id} student=${studentId}`);
 
+    const quiz = await getOrGenerateQuiz(studentId, req.params.id);
+
+    // Strip correctAnswer and explanation from the response — never expose to frontend during quiz
     const safeQuestions = quiz.questions.map((q) => ({
-      _id: q._id,
+      _id:      q._id,
       question: q.question,
-      options: q.options,
+      options:  q.options,
     }));
 
     res.status(200).json({ quizId: quiz._id, questions: safeQuestions });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error('[quiz.controller] getQuizByModule error:', err.message);
+
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+    if (err instanceof ParseError) {
+      return res.status(422).json({
+        success: false,
+        message: 'LLM response could not be parsed as a valid quiz',
+        error: err.message,
+      });
+    }
+    res.status(502).json({
+      success: false,
+      message: 'Quiz generation failed. Please try again.',
+      error: err.message,
+    });
   }
 };
 

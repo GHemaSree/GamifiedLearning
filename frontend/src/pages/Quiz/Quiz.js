@@ -14,6 +14,7 @@ function Quiz() {
   const [quiz, setQuiz] = useState(null);
   const [moduleData, setModuleData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,8 +25,14 @@ function Quiz() {
     const fetchQuizAndModule = async () => {
       try {
         setLoading(true);
+
+        // Start a timer — if the quiz call takes >1.5 s it's likely generating
+        const generatingTimer = setTimeout(() => setGenerating(true), 1500);
+
         // Load the critical quiz data first
         const quizRes = await getModuleQuiz(moduleId);
+        clearTimeout(generatingTimer);
+        setGenerating(false);
         setQuiz(quizRes);
 
         // Load non-critical module meta details separately (fail silently if error)
@@ -48,7 +55,17 @@ function Quiz() {
   if (loading) {
     return (
       <PageLayout>
-        <div>Loading quiz...</div>
+        <div className={styles.generatingWrapper}>
+          {generating ? (
+            <>
+              <div className={styles.generatingSpinner} />
+              <p className={styles.generatingText}>⚔️ The AI is forging your quiz...</p>
+              <p className={styles.generatingSubText}>First-time generation may take a few seconds.</p>
+            </>
+          ) : (
+            <p className={styles.generatingText}>Loading quiz...</p>
+          )}
+        </div>
       </PageLayout>
     );
   }
@@ -104,12 +121,13 @@ function Quiz() {
       const result = await submitQuiz(quiz.quizId, answersArray);
       navigate("/score", {
         state: {
-          score: result.correctCount,
-          total: result.totalQuestions,
-          scorePercent: result.score,
-          passed: result.passed,
-          xpEarned: result.xpEarned,
+          score:          result.correctCount,
+          total:          result.totalQuestions,
+          scorePercent:   result.score,
+          passed:         result.passed,
+          xpEarned:       result.xpEarned,
           readyToAdvance: result.readyToAdvance,
+          newBadges:      result.newBadges || [],
           moduleId,
         },
       });
