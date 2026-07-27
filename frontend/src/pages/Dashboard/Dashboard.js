@@ -123,7 +123,9 @@ function Dashboard() {
                   onClick={() => navigate(`/trail/${trail._id}`)}
                   style={{ cursor: "pointer" }}
                 >
-                  <div className={styles.trailIcon}>📘</div>
+                  <div className={styles.trailIcon}>
+                    {trail.topic?.icon || "📘"}
+                  </div>
                   <div className={styles.trailInfo}>
                     <p className={styles.trailTitle}>{trail.title}</p>
                     <p className={styles.trailCategory}>

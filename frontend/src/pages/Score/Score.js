@@ -49,10 +49,40 @@ function Score() {
   };
 
   const result = getResult();
+  const confettiArray = Array.from({ length: 45 });
 
   return (
     <div className={styles.page}>
       <div className={styles.card}>
+        {/* Floating Confetti Layer for Victors */}
+        {passed && (
+          <div className={styles.confettiContainer}>
+            {confettiArray.map((_, i) => {
+              const delay = (Math.random() * 5).toFixed(2);
+              const left = (Math.random() * 100).toFixed(2);
+              const scale = (Math.random() * 0.6 + 0.4).toFixed(2);
+              const colors = ["#f87171", "#fb923c", "#fbbf24", "#34d399", "#60a5fa", "#c084fc", "#f472b6"];
+              const color = colors[Math.floor(Math.random() * colors.length)];
+              return (
+                <div
+                  key={i}
+                  className={styles.confetti}
+                  style={{
+                    left: `${left}%`,
+                    animationDelay: `${delay}s`,
+                    transform: `scale(${scale})`,
+                    backgroundColor: color,
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {/* Victory/Defeat Banner */}
+        <div className={passed ? styles.victoryBanner : styles.defeatBanner}>
+          {passed ? "⚡ VICTORY: BOSS DEFEATED! ⚡" : "💀 DEFEAT: BOSS OUTLASTED YOU! 💀"}
+        </div>
 
         {/* Result Emoji */}
         <div className={styles.resultEmoji}>{result.emoji}</div>
