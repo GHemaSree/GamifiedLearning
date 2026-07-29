@@ -119,15 +119,18 @@ function Quiz() {
 
     try {
       const result = await submitQuiz(quiz.quizId, answersArray);
+
       navigate("/score", {
         state: {
-          score:          result.correctCount,
-          total:          result.totalQuestions,
-          scorePercent:   result.score,
-          passed:         result.passed,
-          xpEarned:       result.xpEarned,
-          readyToAdvance: result.readyToAdvance,
-          newBadges:      result.newBadges || [],
+          score:              result.correctCount,
+          total:              result.totalQuestions,
+          scorePercent:       result.score,
+          passed:             result.passed,
+          xpEarned:           result.xpEarned,
+          readyToAdvance:     result.readyToAdvance,
+          mastery:            result.mastery,
+          newBadges:          result.newBadges || [],
+          questionBreakdown:  result.questionBreakdown || [],
           moduleId,
         },
       });
@@ -135,7 +138,9 @@ function Quiz() {
       alert("Failed to submit quiz. Please try again.");
       setSubmitting(false);
     }
+
   };
+
 
   const isAnswered = selectedAnswers[currentIndex] !== undefined;
   const allAnswered = quiz.questions.every((_, i) => selectedAnswers[i] !== undefined);

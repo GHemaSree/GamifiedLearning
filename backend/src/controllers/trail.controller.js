@@ -4,7 +4,7 @@ const Topic = require('../models/Topic');
 const Progress = require('../models/Progress');
 const Mastery = require('../models/Mastery');
 const Quiz = require('../models/Quiz');
-const { generateModuleContent, generateQuiz } = require('../services/ai.service');
+const { generateModuleContent } = require('../services/ai.service');
 
 // @desc    Create (or fetch existing) trail for a topic — no AI call, no modules yet
 // @route   POST /trails
@@ -104,8 +104,8 @@ exports.generateNextModule = async (req, res) => {
         order: existingModules.length,
       });
 
-      const quizQuestions = await generateQuiz(trail.topic.title, nextConcept.name, 'beginner');
-      await Quiz.create({ module: module._id, questions: quizQuestions });
+      // Quiz is generated on demand by quiz.service.js when the student
+      // first opens the quiz — no pre-creation needed here.
 
       await Progress.create({
         user: req.user._id,

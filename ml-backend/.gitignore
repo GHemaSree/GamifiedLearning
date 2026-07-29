@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment secrets
+.env
+
+# Model weights (large binary files — download separately)
+# app/dkt/weights/*.pt
+
+# IDE
+.vscode/
+.idea/

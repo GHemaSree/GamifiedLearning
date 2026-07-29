@@ -1,13 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getCurrentUser } from "../../api/authApi";
+import { getModuleById, clearModuleContentCache, clearModuleQuizCache } from "../../api/moduleApi";
 import styles from "./Score.module.css";
 
 function Score() {
   const location = useLocation();
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
+  const [trailId, setTrailId] = useState(null);
+  const [showKey, setShowKey] = useState(false);
+  const [revising, setRevising] = useState(false);
+
   const {
     score,
     total,
@@ -15,7 +20,9 @@ function Score() {
     passed,
     xpEarned,
     readyToAdvance,
+    mastery,
     moduleId,
+    questionBreakdown = [],
   } = location.state || {};
 
   useEffect(() => {
@@ -27,7 +34,17 @@ function Score() {
         // fail silently — not critical to the page working
       }
     };
+    const fetchTrail = async () => {
+      if (!moduleId) return;
+      try {
+        const mod = await getModuleById(moduleId);
+        if (mod?.trail) setTrailId(mod.trail);
+      } catch (err) {
+        // fail silently
+      }
+    };
     syncUser();
+    fetchTrail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -50,6 +67,7 @@ function Score() {
 
   const result = getResult();
   const confettiArray = Array.from({ length: 45 });
+  const optionLetters = ["A", "B", "C", "D"];
 
   return (
     <div className={styles.page}>
@@ -122,8 +140,79 @@ function Score() {
           </p>
         )}
 
+        {/* DKT Mastery Panel */}
+        {mastery && (
+          <div className={styles.masteryPanel}>
+            <p className={styles.masteryTitle}>🧠 DKT Mastery Update</p>
+            {[
+              { label: "Beginner",     value: mastery.beginner },
+              { label: "Intermediate", value: mastery.intermediate },
+              { label: "Advanced",     value: mastery.advanced },
+            ].map(({ label, value }) => (
+              <div key={label} className={styles.masteryRow}>
+                <span className={styles.masteryLabel}>{label}</span>
+                <div className={styles.masteryBarBg}>
+                  <div
+                    className={styles.masteryBarFill}
+                    style={{ width: `${Math.round((value ?? 0) * 100)}%` }}
+                  />
+                </div>
+                <span className={styles.masteryPct}>
+                  {Math.round((value ?? 0) * 100)}%
+                </span>
+              </div>
+            ))}
+            <p className={styles.masteryHint}>
+              {readyToAdvance
+                ? "✅ DKT says you've mastered this concept — ready to advance!"
+                : "⚠️ DKT recommends more practice before moving on."}
+            </p>
+          </div>
+        )}
+
+        {/* DKT-driven primary action */}
+        <div className={styles.dktAction}>
+          {readyToAdvance ? (
+            <button
+              className={styles.nextConceptBtn}
+              onClick={() => trailId && navigate(`/trail/${trailId}`)}
+              disabled={!trailId}
+            >
+              ⚔️ Next Concept
+            </button>
+          ) : (
+            <button
+              className={styles.reviseBtn}
+              disabled={revising}
+              onClick={async () => {
+                setRevising(true);
+                try {
+                  await Promise.all([
+                    clearModuleContentCache(moduleId),
+                    clearModuleQuizCache(moduleId),
+                  ]);
+                } catch (_) {
+                  // fail silently — caches may already be empty
+                }
+                navigate(`/module/${moduleId}`);
+              }}
+            >
+              {revising ? "Preparing revision..." : "🧠 AI Revision Mode"}
+            </button>
+          )}
+        </div>
+
         {/* Actions */}
         <div className={styles.actions}>
+          {passed && trailId && (
+            <button
+              className={styles.dashboardBtn}
+              onClick={() => navigate(`/trail/${trailId}`)}
+              style={{ background: "linear-gradient(135deg, #16a34a, #15803d)" }}
+            >
+              ⚔️ Next Module
+            </button>
+          )}
           <button
             className={styles.retryBtn}
             onClick={() => navigate(`/quiz/${moduleId}`)}
@@ -140,14 +229,74 @@ function Score() {
 
         <button
           className={styles.trailBtn}
-          onClick={() => navigate(-2)}
+          onClick={() => {
+            if (trailId) {
+              navigate(`/trail/${trailId}`);
+            } else {
+              navigate(-2);
+            }
+          }}
         >
           ← Back to Trail
         </button>
+
+        {/* Answer Key Toggle */}
+        {questionBreakdown.length > 0 && (
+          <div className={styles.answerKeySection}>
+            <button
+              className={styles.answerKeyToggle}
+              onClick={() => setShowKey((prev) => !prev)}
+            >
+              {showKey ? "🔼 Hide Answer Key" : "🔑 View Answer Key"}
+            </button>
+
+            {showKey && (
+              <div className={styles.answerKeyList}>
+                {questionBreakdown.map((q, idx) => (
+                  <div
+                    key={idx}
+                    className={`${styles.questionReview} ${
+                      q.isCorrect ? styles.questionCorrect : styles.questionWrong
+                    }`}
+                  >
+                    <p className={styles.questionReviewNum}>
+                      {q.isCorrect ? "✅" : "❌"} Q{idx + 1}
+                    </p>
+                    <p className={styles.questionReviewText}>{q.question}</p>
+
+                    <div className={styles.optionsReview}>
+                      {q.options.map((opt, i) => {
+                        const isCorrect = i === q.correctAnswer;
+                        const isUserPick = i === q.userAnswer;
+                        let optClass = styles.optReview;
+                        if (isCorrect) optClass += ` ${styles.optCorrect}`;
+                        else if (isUserPick && !isCorrect) optClass += ` ${styles.optWrong}`;
+                        return (
+                          <div key={i} className={optClass}>
+                            <span className={styles.optLetter}>{optionLetters[i]}</span>
+                            <span>{opt}</span>
+                            {isCorrect && <span className={styles.optTag}>✓ Correct</span>}
+                            {isUserPick && !isCorrect && <span className={styles.optTag}>✗ Your answer</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {q.explanation && (
+                      <p className={styles.explanation}>
+                        💡 {q.explanation}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
     </div>
   );
 }
 
-export default Score;
+export default Score;

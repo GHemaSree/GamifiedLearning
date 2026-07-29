@@ -1,5 +1,6 @@
 const Module = require('../models/Module');
 const Trail = require('../models/Trail');
+const StudentModuleContent = require('../models/StudentModuleContent');
 const { getOrGenerateContent } = require('../services/moduleContent.service');
 const { getOrGenerateFullNotes } = require('../services/fullNotes.service');
 const { ParseError } = require('../services/ai/responseParser');
@@ -195,3 +196,23 @@ exports.getFullNotes = async (req, res) => {
     });
   }
 };
+
+// @desc    Delete cached module content for this student so it re-generates
+//          with the latest DKT mastery scores (adaptive prompt).
+//          Called by the Score page "AI Revision Mode" button.
+// @route   DELETE /modules/:id/content/cache
+// @access  Private
+exports.clearModuleContent = async (req, res) => {
+  try {
+    const studentId = req.user._id;
+    const moduleId  = req.params.id;
+
+    await StudentModuleContent.deleteOne({ studentId, moduleId });
+
+    return res.status(200).json({ cleared: true });
+  } catch (err) {
+    console.error('[module.controller] clearModuleContent error:', err.message);
+    return res.status(500).json({ message: err.message });
+  }
+};
+

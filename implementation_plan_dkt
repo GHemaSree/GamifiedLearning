@@ -1,0 +1,129 @@
+# DKT Backend Integration Plan
+
+## Background
+
+The project has two backends:
+- **Node.js backend** (`backend/`): Express + MongoDB. Handles auth, trails, modules, quizzes, mastery, recommendations.
+- **Python ml-backend** (`ml-backend/`): FastAPI. Hosts trained DKT (Deep Knowledge Tracing) neural network models.
+
+Currently, the Node.js backend's `ai.service.js` has a **mock** `getDKTPrediction` function that uses simple fixed arithmetic (+0.13/-0.12) instead of calling the real DKT model. The ml-backend's quiz route also has **placeholder** comments where DB calls should go.
+
+## Goal
+
+Replace the mock with real DKT inference by:
+1. Making the **ml-backend** the DKT inference authority — it receives quiz history, runs the model, returns mastery scores.
+2. Making the **Node.js backend** call the ml-backend via HTTP after a quiz submission, then persist the returned mastery scores to MongoDB.
+
+---
+
+## Architecture After Integration
+
+```
+Frontend
+  └─► POST /quiz/:id/submit  (Node.js backend)
+        ├─ Grades quiz answers
+        ├─ Fetches interaction history from MongoDB
+        ├─► POST http://localhost:8000/quiz/submit  (ml-backend)
+        │     ├─ Runs DKT inference on full history
+        │     └─ Returns { mastery, next_level, concept_complete, xp_earned }
+        ├─ Persists mastery snapshot back to MongoDB (Mastery collection)
+        └─ Returns enriched result to frontend
+```
+
+---
+
+## Proposed Changes
+
+### 1. ml-backend — wire real MongoDB interactions
+
+#### [MODIFY] [quiz.py](file:///d:/GamifiedLearning/ml-backend/app/routes/quiz.py)
+
+Replace the placeholder DB comments with real `pymongo` calls:
+- On quiz submit: **save the interaction** to a `quiz_interactions` collection.
+- **Pull full interaction history** for the user+topic from that collection, ordered by timestamp ASC.
+- Run `process_quiz_answer(history, ...)` to get `mastery` + `next_level`.
+- **Save mastery snapshot** to a `mastery_snapshots` collection (upsert per user+topic+concept).
+- Return the response as before.
+
+#### [NEW] `ml-backend/app/db.py`
+
+A thin MongoDB connection module using `pymongo` (sync, since FastAPI can use sync DB calls in regular routes). Reads `MONGO_URI` from environment. Provides `get_db()` that returns the database handle.
+
+#### [MODIFY] [main.py](file:///d:/GamifiedLearning/ml-backend/app/main.py)
+
+Add startup: connect to MongoDB via `pymongo`. Also update CORS to include the Node.js backend origin (port 5000) in case of direct dev calls.
+
+#### [MODIFY] `.env.example` → add `MONGO_URI`
+
+```
+MONGO_URI=mongodb+srv://...
+```
+
+---
+
+### 2. Node.js backend — replace mock DKT with real HTTP call
+
+#### [MODIFY] [ai.service.js](file:///d:/GamifiedLearning/backend/src/services/ai.service.js)
+
+Replace the mock `getDKTPrediction` with a real HTTP call to `http://localhost:8000/quiz/submit`.
+
+The function will:
+1. Accept `(userId, topicSlug, concept, difficulty, correct)` — not just `priorMastery`.
+2. POST to the ml-backend with these fields.
+3. Parse the response: `{ mastery, next_level, concept_complete, xp_earned, full_mastery }`.
+4. Return a normalized result matching what `quiz.controller.js` expects:
+   - `updated`: the concept's per-difficulty mastery scores
+   - `nextDifficulty`: `next_level`
+   - `readyToAdvanceConcept`: `concept_complete`
+
+#### [MODIFY] [quiz.controller.js](file:///d:/GamifiedLearning/backend/src/controllers/quiz.controller.js)
+
+Update the `submitQuiz` handler to pass the new parameters to `getDKTPrediction`:
+- Pass `userId`, `topicSlug` (normalized from `topic.title`), `concept`, `difficulty`, `passed ? 1 : 0`
+
+#### [NEW] `backend/src/utils/topicSlug.js`
+
+A small utility to convert a Topic title (e.g. `"Python Fundamentals"`) into the DKT slug format (e.g. `"python_fundamentals"`), matching the keys in `ml-backend/app/dkt/skills.py`.
+
+#### [MODIFY] `backend/.env`
+
+Add `ML_BACKEND_URL=http://localhost:8000`
+
+---
+
+## Key Design Decisions
+
+> [!IMPORTANT]
+> **Single source of truth for mastery**: The Node.js backend remains the master store of mastery (MongoDB `Mastery` collection). The ml-backend is stateless for the inference result — it saves interaction history and returns scores, but the Node.js backend writes the final authoritative `Mastery` document.
+
+> [!NOTE]
+> **Topic slug normalization**: The Node.js backend stores topic titles as human-readable strings (e.g. "Python Fundamentals"). The DKT model uses snake_case slugs (e.g. "python_fundamentals"). A utility function handles this mapping.
+
+> [!NOTE]
+> **Graceful fallback**: If the ml-backend is unreachable (e.g. not running), the Node.js backend falls back to the existing mock arithmetic to avoid breaking the quiz flow. A warning is logged.
+
+---
+
+## Files Changed Summary
+
+| File | Action |
+|------|--------|
+| `ml-backend/app/db.py` | NEW — MongoDB connection |
+| `ml-backend/app/routes/quiz.py` | MODIFY — wire real DB |
+| `ml-backend/app/main.py` | MODIFY — DB startup |
+| `ml-backend/.env.example` | MODIFY — add MONGO_URI |
+| `backend/src/utils/topicSlug.js` | NEW — title→slug helper |
+| `backend/src/services/ai.service.js` | MODIFY — real HTTP DKT call |
+| `backend/src/controllers/quiz.controller.js` | MODIFY — pass new params |
+| `backend/.env` | MODIFY — add ML_BACKEND_URL |
+
+## Verification Plan
+
+### Manual Verification
+1. Start ml-backend: `uvicorn app.main:app --reload`
+2. Start Node.js backend: `npm run dev`
+3. Submit a quiz via the frontend and confirm:
+   - The ml-backend logs show DKT inference running
+   - The returned `mastery` object has real per-difficulty floats (not mock 0.63 etc.)
+   - The `Mastery` MongoDB document is updated with real DKT scores
+   - The `quiz_interactions` collection in MongoDB has the new interaction row

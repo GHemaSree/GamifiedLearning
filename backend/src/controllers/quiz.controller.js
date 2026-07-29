@@ -9,8 +9,9 @@ const { getDKTPrediction } = require('../services/ai.service');
 const { checkAndAwardBadges } = require('../services/badge.service');
 const { getOrGenerateQuiz } = require('../services/quiz.service');
 const { ParseError } = require('../services/ai/responseParser');
+const { titleToSlug } = require('../utils/topicSlug');
 
-const PASS_THRESHOLD = 85;
+const PASS_THRESHOLD = 80;
 const LEVEL_THRESHOLDS = [0, 500, 1000, 2000, 3500, 5000];
 
 const calculateLevel = (xp) => {
@@ -68,9 +69,9 @@ exports.getQuizByModule = async (req, res) => {
 
     // Strip correctAnswer and explanation from the response — never expose to frontend during quiz
     const safeQuestions = quiz.questions.map((q) => ({
-      _id:      q._id,
+      _id: q._id,
       question: q.question,
-      options:  q.options,
+      options: q.options,
     }));
 
     res.status(200).json({ quizId: quiz._id, questions: safeQuestions });
@@ -113,16 +114,20 @@ exports.submitQuiz = async (req, res) => {
     }
 
     const existingProgress = await Progress.findOne({ user: req.user._id, module: module._id });
-    if (existingProgress?.completionStatus === 'completed') {
-      return res.status(200).json({
-        message: 'This module was already completed.',
-        alreadyCompleted: true,
-      });
-    }
+    const alreadyCompleted = existingProgress?.completionStatus === 'completed';
 
     let correctCount = 0;
-    quiz.questions.forEach((q, i) => {
-      if (answers[i] === q.correctAnswer) correctCount++;
+    const questionBreakdown = quiz.questions.map((q, i) => {
+      const isCorrect = answers[i] === q.correctAnswer;
+      if (isCorrect) correctCount++;
+      return {
+        question: q.question,
+        options: q.options,
+        userAnswer: answers[i] ?? null,    // index the student picked
+        correctAnswer: q.correctAnswer,       // correct index
+        explanation: q.explanation || '',
+        isCorrect,
+      };
     });
     const score = Math.round((correctCount / quiz.questions.length) * 100);
     const passed = score >= PASS_THRESHOLD;
@@ -135,10 +140,29 @@ exports.submitQuiz = async (req, res) => {
       passed,
     });
 
-    await Progress.findOneAndUpdate(
-      { user: req.user._id, module: module._id },
-      { completionStatus: passed ? 'completed' : 'in_progress' }
-    );
+    // On re-attempts of an already-completed module: skip all side-effects
+    // (XP, mastery, progress, DKT, badges) but still return the score page.
+    if (alreadyCompleted) {
+      const mastery = await Mastery.findOne({
+        user: req.user._id,
+        topic: trail.topic._id,
+        concept: module.concept,
+      });
+      return res.status(200).json({
+        score,
+        passed,
+        correctCount,
+        totalQuestions: quiz.questions.length,
+        xpEarned: 0,
+        newLevel: null,
+        streak: null,
+        mastery: mastery ? { beginner: mastery.beginner, intermediate: mastery.intermediate, advanced: mastery.advanced } : null,
+        readyToAdvance: false,
+        newBadges: [],
+        questionBreakdown,
+        alreadyCompleted: true,
+      });
+    }
 
     await Progress.findOneAndUpdate(
       { user: req.user._id, module: module._id },
@@ -176,7 +200,19 @@ exports.submitQuiz = async (req, res) => {
       intermediate: mastery.intermediate,
       advanced: mastery.advanced,
     };
-    const dktResult = await getDKTPrediction(priorScores, module.difficulty, passed);
+
+    // Convert human-readable topic title → DKT snake_case slug
+    const topicSlug = titleToSlug(trail.topic?.title || trail.topic?.toString());
+    console.log(`[quiz.controller] DKT call → topic=${topicSlug} concept=${module.concept} difficulty=${module.difficulty} passed=${passed}`);
+
+    const dktResult = await getDKTPrediction({
+      userId: req.user._id.toString(),
+      topicSlug,
+      concept: module.concept,
+      difficulty: module.difficulty,
+      isCorrect: passed,
+      priorMastery: priorScores,   // used only if ml-backend is unreachable
+    });
 
     mastery.beginner = dktResult.updated.beginner;
     mastery.intermediate = dktResult.updated.intermediate;
@@ -209,10 +245,27 @@ exports.submitQuiz = async (req, res) => {
       streak: user.streak,
       mastery: dktResult.updated,
       readyToAdvance: dktResult.readyToAdvanceConcept,
-      newBadges, // array of newly earned badge definitions, empty if none
+      newBadges,
+      questionBreakdown,   // per-question review — not stored, computed on submit
+
     });
   } catch (err) {
     console.error('Quiz submit failed:', err);
     res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Delete cached quiz for a module so it re-generates using the
+//          adaptive prompt (reads current mastery + weak concepts).
+//          Called by the Score page "AI Revision Mode" button.
+// @route   DELETE /modules/:id/quiz/cache   (registered in module.routes.js)
+// @access  Private
+exports.clearModuleQuiz = async (req, res) => {
+  try {
+    await Quiz.deleteMany({ module: req.params.id });
+    return res.status(200).json({ cleared: true });
+  } catch (err) {
+    console.error('[quiz.controller] clearModuleQuiz error:', err.message);
+    return res.status(500).json({ message: err.message });
   }
 };
