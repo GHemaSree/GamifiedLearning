@@ -94,7 +94,7 @@
 
   --color-text-primary: #e5e7eb;  /* Softer High-Contrast White */
   --color-text-secondary: #9ca3af;/* Cool Grey */
-  --color-text-muted: #4b5563;    /* Dark Slate Grey */
+  --color-text-muted: #64748b;    /* Dark Slate Grey */
 
   /* Theme-specific custom styles - DARK THEME */
   --sidebar-hover-bg: rgba(139, 92, 246, 0.1);
