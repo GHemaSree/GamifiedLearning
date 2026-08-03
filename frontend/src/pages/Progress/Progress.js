@@ -22,6 +22,7 @@ function Progress() {
   const [trails, setTrails] = useState([]);
   const [quizStats, setQuizStats] = useState({ totalQuizzesTaken: 0, averageScore: 0 });
   const [recentActivity, setRecentActivity] = useState([]);
+  const [mastery, setMastery] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -39,6 +40,7 @@ function Progress() {
           averageScore: progressData.averageScore,
         });
         setRecentActivity(progressData.recentActivity || []);
+        setMastery(progressData.mastery || []);
       } catch (err) {
         setError("Failed to load progress.");
       } finally {
@@ -147,6 +149,78 @@ function Progress() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* DKT Mastery Section */}
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>🔮 AI Knowledge Tracing (DKT Mastery)</h3>
+          {mastery.length === 0 ? (
+            <p>No mastery data calculated yet — take a quiz to initiate Deep Knowledge Tracing.</p>
+          ) : (
+            <div className={styles.masteryGrid}>
+              {mastery.map((m, idx) => {
+                const currentDiff = m.currentDifficulty || "beginner";
+                return (
+                  <div key={idx} className={styles.masteryCard}>
+                    <div className={styles.masteryHeader}>
+                      <span className={styles.masteryIcon}>{m.topic?.icon || "🧠"}</span>
+                      <div className={styles.masteryMeta}>
+                        <h4 className={styles.masteryConcept}>{m.concept}</h4>
+                        <span className={styles.masteryTopic}>{m.topic?.title}</span>
+                      </div>
+                      <span className={`${styles.difficultyBadge} ${styles[currentDiff]}`}>
+                        {currentDiff.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className={styles.masteryBars}>
+                      <div className={styles.masteryRow}>
+                        <span className={styles.barLabel}>Beginner Mastery:</span>
+                        <div className={styles.barOuter}>
+                          <div
+                            className={styles.barInner}
+                            style={{
+                              width: `${Math.round(m.beginner * 100)}%`,
+                              backgroundColor: "var(--color-primary-light)",
+                            }}
+                          />
+                        </div>
+                        <span className={styles.barValue}>{Math.round(m.beginner * 100)}%</span>
+                      </div>
+
+                      <div className={styles.masteryRow}>
+                        <span className={styles.barLabel}>Intermediate Mastery:</span>
+                        <div className={styles.barOuter}>
+                          <div
+                            className={styles.barInner}
+                            style={{
+                              width: `${Math.round(m.intermediate * 100)}%`,
+                              backgroundColor: "var(--color-secondary)",
+                            }}
+                          />
+                        </div>
+                        <span className={styles.barValue}>{Math.round(m.intermediate * 100)}%</span>
+                      </div>
+
+                      <div className={styles.masteryRow}>
+                        <span className={styles.barLabel}>Advanced Mastery:</span>
+                        <div className={styles.barOuter}>
+                          <div
+                            className={styles.barInner}
+                            style={{
+                              width: `${Math.round(m.advanced * 100)}%`,
+                              backgroundColor: "var(--color-success)",
+                            }}
+                          />
+                        </div>
+                        <span className={styles.barValue}>{Math.round(m.advanced * 100)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Recent Activity */}

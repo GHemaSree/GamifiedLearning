@@ -1,5 +1,6 @@
 const Progress = require('../models/Progress');
 const QuizAttempt = require('../models/QuizAttempt');
+const Mastery = require('../models/Mastery');
 
 // Merge completed Progress entries and QuizAttempt entries into one
 // chronological activity feed, newest first, capped at 10 items.
@@ -39,6 +40,9 @@ exports.getMyProgress = async (req, res) => {
       .populate('module', 'title')
       .sort({ createdAt: -1 });
 
+    const mastery = await Mastery.find({ user: req.user._id })
+      .populate('topic', 'title icon');
+
     const totalQuizzesTaken = attempts.length;
     const averageScore = totalQuizzesTaken > 0
       ? Math.round(attempts.reduce((sum, a) => sum + a.score, 0) / totalQuizzesTaken)
@@ -46,7 +50,7 @@ exports.getMyProgress = async (req, res) => {
 
     const recentActivity = _buildRecentActivity(progress, attempts);
 
-    res.status(200).json({ progress, totalQuizzesTaken, averageScore, recentActivity });
+    res.status(200).json({ progress, totalQuizzesTaken, averageScore, recentActivity, mastery });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -71,6 +75,9 @@ exports.getProgressByUserId = async (req, res) => {
       .populate('module', 'title')
       .sort({ createdAt: -1 });
 
+    const mastery = await Mastery.find({ user: userId })
+      .populate('topic', 'title icon');
+
     const totalQuizzesTaken = attempts.length;
     const averageScore = totalQuizzesTaken > 0
       ? Math.round(attempts.reduce((sum, a) => sum + a.score, 0) / totalQuizzesTaken)
@@ -78,7 +85,7 @@ exports.getProgressByUserId = async (req, res) => {
 
     const recentActivity = _buildRecentActivity(progress, attempts);
 
-    res.status(200).json({ progress, totalQuizzesTaken, averageScore, recentActivity });
+    res.status(200).json({ progress, totalQuizzesTaken, averageScore, recentActivity, mastery });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

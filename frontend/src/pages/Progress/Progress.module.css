@@ -343,3 +343,127 @@
   color: var(--color-text-muted);
   flex-shrink: 0;
 }
+
+/* DKT Mastery Grid & Card styling */
+.masteryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-md);
+}
+
+.masteryCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.masteryHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.masteryIcon {
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
+  background-color: var(--icon-bg);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.masteryMeta {
+  flex: 1;
+}
+
+.masteryConcept {
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-md);
+  margin: 0;
+}
+
+.masteryTopic {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.difficultyBadge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.difficultyBadge.beginner {
+  background-color: rgba(129, 140, 248, 0.15);
+  color: var(--color-primary-light);
+  border: 1px solid rgba(129, 140, 248, 0.3);
+}
+
+.difficultyBadge.intermediate {
+  background-color: rgba(6, 182, 212, 0.15);
+  color: var(--color-secondary);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.difficultyBadge.advanced {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--color-success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.masteryBars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-sm);
+}
+
+.masteryRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.barLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.barOuter {
+  flex: 1;
+  height: 8px;
+  background-color: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barInner {
+  height: 100%;
+  border-radius: 999px;
+  transition: width var(--transition-base);
+}
+
+.barValue {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
