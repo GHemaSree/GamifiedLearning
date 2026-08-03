@@ -2,11 +2,9 @@ import { useState, useEffect } from "react";
 import PageLayout from "../../components/layout/PageLayout";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { getMyTrails, getTrailByTopic } from "../../api/trailApi";
+import { getTrailByTopic } from "../../api/trailApi";
 import { getMyProgress } from "../../api/progressApi";
 import styles from "./Progress.module.css";
-
-const levelThresholds = [0, 500, 1000, 2000, 3500, 5000];
 
 const formatTimeAgo = (dateString) => {
   const diffMs = Date.now() - new Date(dateString).getTime();
@@ -20,8 +18,6 @@ const formatTimeAgo = (dateString) => {
 
 function Progress() {
   const { user } = useAuth();
-  const [trails, setTrails] = useState([]);
-  const [quizStats, setQuizStats] = useState({ totalQuizzesTaken: 0, averageScore: 0 });
   const [recentActivity, setRecentActivity] = useState([]);
   const [mastery, setMastery] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,15 +39,7 @@ function Progress() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [trailsData, progressData] = await Promise.all([
-          getMyTrails(),
-          getMyProgress(),
-        ]);
-        setTrails(trailsData);
-        setQuizStats({
-          totalQuizzesTaken: progressData.totalQuizzesTaken,
-          averageScore: progressData.averageScore,
-        });
+        const progressData = await getMyProgress();
         setRecentActivity(progressData.recentActivity || []);
         setMastery(progressData.mastery || []);
       } catch (err) {
@@ -66,15 +54,9 @@ function Progress() {
   if (loading) return <PageLayout><div>Loading progress...</div></PageLayout>;
   if (error) return <PageLayout><div>{error}</div></PageLayout>;
 
-  const totalModulesCompleted = trails.reduce((sum, t) => sum + t.modulesCompleted, 0);
-
   const totalXp = user?.xp ?? 0;
   const level = user?.level ?? 1;
   const streak = user?.streak ?? 0;
-
-  const currentLevelXp = levelThresholds[level - 1] ?? 0;
-  const nextLevelXp = levelThresholds[level] ?? currentLevelXp + 1000;
-  const xpPercent = Math.round(((totalXp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100);
 
   // Calculate average DKT mastery percentage
   const averageMastery = mastery.length > 0
