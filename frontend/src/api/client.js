@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const client = axios.create({
-  baseURL: "http://localhost:5000",
+  baseURL: "https://trailforge-backend-633e.onrender.com",
 });
 
 // Automatically attach the token to every request, if it exists
