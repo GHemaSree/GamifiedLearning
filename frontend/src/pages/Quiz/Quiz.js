@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Navigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
 import { useAuth } from "../../context/AuthContext";
 import { getModuleQuiz, getModuleById } from "../../api/moduleApi";
@@ -9,7 +9,7 @@ import styles from "./Quiz.module.css";
 function Quiz() {
   const { moduleId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth(); // Need to import useAuth or wait, is useAuth imported? Let's check imports!
+  const { user } = useAuth();
 
   const [quiz, setQuiz] = useState(null);
   const [moduleData, setModuleData] = useState(null);
@@ -21,21 +21,80 @@ function Quiz() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
 
+  // Safe calculated variables (before early loading returns)
+  const currentQuestion = quiz?.questions ? quiz.questions[currentIndex] : null;
+  const totalQuestions = quiz?.questions ? quiz.questions.length : 0;
+  const isLast = quiz?.questions ? currentIndex === totalQuestions - 1 : false;
+  const progress = quiz?.questions && totalQuestions > 0 ? ((currentIndex + 1) / totalQuestions) * 100 : 0;
+  const isAnswered = selectedAnswers[currentIndex] !== undefined;
+  const allAnswered = quiz?.questions ? quiz.questions.every((_, i) => selectedAnswers[i] !== undefined) : false;
+
+  const handleOptionSelect = (optionIndex) => {
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [currentIndex]: optionIndex,
+    }));
+  };
+
+  const handleNext = () => {
+    if (quiz?.questions && currentIndex < quiz.questions.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+  };
+
+  const getBossName = () => {
+    return moduleData?.title ? `${moduleData.title} Guardian 👾` : "Syntax Overlord 👾";
+  };
+
+  const getPlayerName = () => {
+    return user?.name ? `${user.name.toUpperCase()} SHIELD` : "PLAYER SHIELD";
+  };
+
+  const handleSubmit = async () => {
+    if (submitting || !quiz) return;
+    setSubmitting(true);
+
+    const answersArray = quiz.questions.map((_, i) => selectedAnswers[i]);
+
+    try {
+      const result = await submitQuiz(quiz.quizId, answersArray);
+
+      navigate("/score", {
+        state: {
+          score:              result.correctCount,
+          total:              result.totalQuestions,
+          scorePercent:       result.score,
+          passed:             result.passed,
+          xpEarned:           result.xpEarned,
+          readyToAdvance:     result.readyToAdvance,
+          mastery:            result.mastery,
+          newBadges:          result.newBadges || [],
+          questionBreakdown:  result.questionBreakdown || [],
+          moduleId,
+        },
+      });
+    } catch (err) {
+      alert("Failed to submit quiz. Please try again.");
+      setSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     const fetchQuizAndModule = async () => {
       try {
         setLoading(true);
-
-        // Start a timer — if the quiz call takes >1.5 s it's likely generating
         const generatingTimer = setTimeout(() => setGenerating(true), 1500);
-
-        // Load the critical quiz data first
         const quizRes = await getModuleQuiz(moduleId);
         clearTimeout(generatingTimer);
         setGenerating(false);
         setQuiz(quizRes);
 
-        // Load non-critical module meta details separately (fail silently if error)
         try {
           const moduleRes = await getModuleById(moduleId);
           setModuleData(moduleRes);
@@ -51,6 +110,11 @@ function Quiz() {
     };
     fetchQuizAndModule();
   }, [moduleId]);
+
+  // Secure Gate: Admins cannot participate in learner quizzes
+  if (user && user.role === "admin") {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   if (loading) {
     return (
@@ -77,73 +141,6 @@ function Quiz() {
       </PageLayout>
     );
   }
-
-  const currentQuestion = quiz.questions[currentIndex];
-  const totalQuestions = quiz.questions.length;
-  const isLast = currentIndex === totalQuestions - 1;
-  const progress = ((currentIndex + 1) / totalQuestions) * 100;
-
-  // keyed by question INDEX, not an id string — matches the order the backend expects answers in
-  const handleOptionSelect = (optionIndex) => {
-    setSelectedAnswers((prev) => ({
-      ...prev,
-      [currentIndex]: optionIndex,
-    }));
-  };
-
-  const handleNext = () => {
-    if (currentIndex < totalQuestions - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    }
-  };
-
-  const getBossName = () => {
-    return moduleData?.title ? `${moduleData.title} Guardian 👾` : "Syntax Overlord 👾";
-  };
-
-  const getPlayerName = () => {
-    return user?.name ? `${user.name.toUpperCase()} SHIELD` : "PLAYER SHIELD";
-  };
-
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (submitting) return;
-    setSubmitting(true);
-
-    const answersArray = quiz.questions.map((_, i) => selectedAnswers[i]);
-
-    try {
-      const result = await submitQuiz(quiz.quizId, answersArray);
-
-      navigate("/score", {
-        state: {
-          score:              result.correctCount,
-          total:              result.totalQuestions,
-          scorePercent:       result.score,
-          passed:             result.passed,
-          xpEarned:           result.xpEarned,
-          readyToAdvance:     result.readyToAdvance,
-          mastery:            result.mastery,
-          newBadges:          result.newBadges || [],
-          questionBreakdown:  result.questionBreakdown || [],
-          moduleId,
-        },
-      });
-    } catch (err) {
-      alert("Failed to submit quiz. Please try again.");
-      setSubmitting(false);
-    }
-
-  };
-
-
-  const isAnswered = selectedAnswers[currentIndex] !== undefined;
-  const allAnswered = quiz.questions.every((_, i) => selectedAnswers[i] !== undefined);
 
   return (
     <PageLayout>

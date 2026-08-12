@@ -11,6 +11,9 @@ import Score from "../pages/Score/Score";
 import Progress from "../pages/Progress/Progress";
 import Recommendations from "../pages/Recommendations/Recommendations";
 import Profile from "../pages/Profile/Profile";
+import AdminForge from "../pages/Admin/AdminForge";
+import AdminInventory from "../pages/Admin/AdminInventory";
+import AdminRoster from "../pages/Admin/AdminRoster";
 import ProtectedRoute from "./ProtectedRoute";
 
 function AppRoutes() {
@@ -95,6 +98,38 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <Navigate to="/admin/forge" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/forge"
+        element={
+          <ProtectedRoute>
+            <AdminForge />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/inventory"
+        element={
+          <ProtectedRoute>
+            <AdminInventory />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/roster"
+        element={
+          <ProtectedRoute>
+            <AdminRoster />
           </ProtectedRoute>
         }
       />

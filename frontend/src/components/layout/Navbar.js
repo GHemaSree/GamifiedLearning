@@ -46,25 +46,27 @@ function Navbar() {
 
       <div className={styles.actions}>
         {/* Level and Streak HUD */}
-        <div className={styles.hud}>
-          <div className={styles.hudItem} title="Active Streak">
-            <span className={styles.streakFlame}>🔥</span>
-            <span className={styles.hudValue}>{streak}</span>
-          </div>
-          <div className={styles.hudItem} title="Current Level">
-            <span className={styles.levelShield}>⭐</span>
-            <span className={styles.hudValue}>Lvl {level}</span>
-          </div>
-          <div
-            className={styles.xpWrapper}
-            title={`${xp - currentLevelXp} / ${nextLevelXp - currentLevelXp} XP to Level ${level + 1}`}
-          >
-            <div className={styles.xpBar}>
-              <div className={styles.xpFill} style={{ width: `${progressPercent}%` }} />
+        {user?.role !== "admin" && (
+          <div className={styles.hud}>
+            <div className={styles.hudItem} title="Active Streak">
+              <span className={styles.streakFlame}>🔥</span>
+              <span className={styles.hudValue}>{streak}</span>
             </div>
-            <span className={styles.xpText}>{xp} XP</span>
+            <div className={styles.hudItem} title="Current Level">
+              <span className={styles.levelShield}>⭐</span>
+              <span className={styles.hudValue}>Lvl {level}</span>
+            </div>
+            <div
+              className={styles.xpWrapper}
+              title={`${xp - currentLevelXp} / ${nextLevelXp - currentLevelXp} XP to Level ${level + 1}`}
+            >
+              <div className={styles.xpBar}>
+                <div className={styles.xpFill} style={{ width: `${progressPercent}%` }} />
+              </div>
+              <span className={styles.xpText}>{xp} XP</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Theme Toggle Button */}
         <button
@@ -77,8 +79,12 @@ function Navbar() {
 
         <div
           className={styles.avatar}
-          onClick={() => navigate("/profile")}
-          title="View Profile"
+          onClick={() => {
+            if (user?.role !== "admin") {
+              navigate("/profile");
+            }
+          }}
+          title={user?.role === "admin" ? "Admin Session" : "View Profile"}
         >
           {initial}
         </div>

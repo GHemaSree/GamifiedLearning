@@ -12,6 +12,7 @@ function Register() {
     email: "",
     password: "",
     confirmPassword: "",
+    role: "learner",
   });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
@@ -57,7 +58,12 @@ function Register() {
     setServerError("");
     setLoading(true);
     try {
-      const data = await registerUser(formData.fullName, formData.email, formData.password);
+      const data = await registerUser(
+        formData.fullName,
+        formData.email,
+        formData.password,
+        formData.role
+      );
       login(data.user, data.token);
       navigate("/dashboard");
     } catch (error) {
@@ -115,6 +121,18 @@ function Register() {
             error={errors.confirmPassword}
             placeholder="Confirm Password"
           />
+          <div className={styles.roleSelection}>
+            <label className={styles.roleLabel}>Register As:</label>
+            <select
+              name="role"
+              className={styles.roleSelect}
+              value={formData.role}
+              onChange={handleChange}
+            >
+              <option value="learner">Learner (Student)</option>
+              <option value="admin">Administrator (Instructor)</option>
+            </select>
+          </div>
           <Button type="submit" disabled={loading}>
             {loading ? "Creating account..." : "Sign Up"}
           </Button>

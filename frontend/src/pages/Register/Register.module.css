@@ -59,3 +59,34 @@
   margin-bottom: var(--space-md);
   text-align: center;
 }
+
+.roleSelection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  text-align: left;
+  margin-bottom: var(--space-md);
+}
+
+.roleLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  padding-left: 4px;
+}
+
+.roleSelect {
+  width: 100%;
+  padding: var(--space-md);
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  outline: none;
+  font-size: var(--font-size-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.roleSelect:focus {
+  border-color: var(--color-primary-light);
+}

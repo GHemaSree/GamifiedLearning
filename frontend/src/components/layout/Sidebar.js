@@ -11,7 +11,7 @@ const navItems = [
 ];
 
 function Sidebar() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -19,10 +19,23 @@ function Sidebar() {
     navigate("/login");
   };
 
+  let activeNavItems = [];
+  if (user && user.role === "admin") {
+    activeNavItems = [
+      { path: "/dashboard", icon: "🏠", label: "Home Base" },
+      { path: "/topics", icon: "🗺️", label: "World Map" },
+      { path: "/admin/forge", icon: "⚔️", label: "Forge Topic" },
+      { path: "/admin/inventory", icon: "📦", label: "Topics Inventory" },
+      { path: "/admin/roster", icon: "👥", label: "Learner Roster" },
+    ];
+  } else {
+    activeNavItems = [...navItems];
+  }
+
   return (
     <aside className={styles.sidebar}>
       <nav className={styles.nav}>
-        {navItems.map((item) => (
+        {activeNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}

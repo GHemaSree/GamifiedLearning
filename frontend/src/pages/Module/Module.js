@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
+import { useAuth } from "../../context/AuthContext";
 import { getModuleById, getModuleContent } from "../../api/moduleApi";
 import styles from "./Module.module.css";
 
 function Module() {
+  const { user } = useAuth();
   const { moduleId } = useParams();
   const navigate = useNavigate();
   const [module, setModule] = useState(null);
@@ -167,12 +169,14 @@ function Module() {
           >
             📖 View Full Notes
           </button>
-          <button
-            className={styles.quizBtn}
-            onClick={() => navigate(`/quiz/${moduleId}`)}
-          >
-            🧠 Start Quiz
-          </button>
+          {user?.role !== "admin" && (
+            <button
+              className={styles.quizBtn}
+              onClick={() => navigate(`/quiz/${moduleId}`)}
+            >
+              🧠 Start Quiz
+            </button>
+          )}
         </div>
       </div>
     </PageLayout>

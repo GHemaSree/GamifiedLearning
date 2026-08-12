@@ -293,7 +293,6 @@ function Score() {
             )}
           </div>
         )}
-
       </div>
     </div>
   );

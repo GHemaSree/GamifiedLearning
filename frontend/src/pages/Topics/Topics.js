@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
+import { useAuth } from "../../context/AuthContext";
 import { getTopics } from "../../api/topicsApi";
 import { getTrailByTopic } from "../../api/trailApi";
 import styles from "./Topics.module.css";
@@ -12,6 +13,7 @@ const levelColors = {
 };
 
 function Topics() {
+  const { user } = useAuth();
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,6 +71,10 @@ function Topics() {
   );
 
  const handleTopicClick = async (topicId) => {
+  if (user?.role === "admin") {
+    navigate(`/trail/preview-${topicId}`);
+    return;
+  }
   try {
     const existingTrail = await getTrailByTopic(topicId);
     navigate(`/trail/${existingTrail._id}`);
