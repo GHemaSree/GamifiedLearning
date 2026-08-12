@@ -9,3 +9,11 @@
   padding: var(--space-xl);
   min-height: calc(100vh - 64px);
 }
+
+@media (max-width: 768px) {
+  .main {
+    margin-left: 0;
+    margin-bottom: 60px; /* space for the bottom nav bar */
+    padding: var(--space-md);
+  }
+}

@@ -83,3 +83,67 @@
   background-color: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.2);
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    height: 60px;
+    flex-direction: row;
+    padding: 0;
+    border-right: none;
+    border-top: 1px solid var(--color-border);
+    align-items: center;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  .nav {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+    padding: 0;
+    gap: 0;
+  }
+
+  .navItem {
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px var(--space-sm);
+    font-size: 10px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .active {
+    box-shadow: inset 0 -3px 0 var(--color-primary);
+  }
+
+  .icon {
+    font-size: 18px;
+    width: auto;
+  }
+
+  .label {
+    font-size: 9px;
+    display: block;
+    white-space: nowrap;
+  }
+
+  .footer {
+    padding: 0;
+    display: flex;
+    align-items: center;
+    margin-right: var(--space-sm);
+  }
+
+  .logoutBtn {
+    flex-direction: column;
+    padding: 4px var(--space-sm);
+    gap: 2px;
+    font-size: 9px;
+    width: auto;
+    align-items: center;
+    justify-content: center;
+  }
+}
