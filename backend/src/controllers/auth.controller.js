@@ -15,11 +15,7 @@ const registerUser = async (req, res) => {
       return res.status(409).json({ message: 'Email already registered' });
     }
 
-    let assignedRole = 'learner';
-    if (role === 'admin' || email.toLowerCase().includes('admin')) {
-      assignedRole = 'admin';
-    }
-    const user = await User.create({ name, email, password, role: assignedRole });
+    const user = await User.create({ name, email, password });
 
     const token = generateToken(user._id);
 
