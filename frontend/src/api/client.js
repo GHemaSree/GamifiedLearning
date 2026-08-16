@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const client = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000",
+  baseURL: process.env.REACT_APP_API_URL || "https://trailforge-backend-633e.onrender.com",
 });
 
 // Automatically attach the token to every request, if it exists
