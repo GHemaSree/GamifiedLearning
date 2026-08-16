@@ -30,4 +30,16 @@ export const clearModuleContentCache = async (moduleId) => {
 export const clearModuleQuizCache = async (moduleId) => {
   const response = await client.delete(`/modules/${moduleId}/quiz/cache`);
   return response.data;
+};
+
+// Submit a quest answer → LLM judge → returns { isCorrect, feedback, xpAwarded, totalXp, level }
+export const submitQuestAnswer = async (moduleId, questIndex, answer) => {
+  const response = await client.post(`/modules/${moduleId}/quests/${questIndex}/answer`, { answer });
+  return response.data;
+};
+
+// Get all prior quest attempts for a module (to know which are already done)
+export const getQuestAttempts = async (moduleId) => {
+  const response = await client.get(`/modules/${moduleId}/quests/attempts`);
+  return response.data.attempts;
 };

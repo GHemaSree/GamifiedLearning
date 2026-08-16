@@ -21,7 +21,7 @@ const Mastery              = require('../models/Mastery');
 
 const { buildPrompt }                    = require('./ai/promptBuilder');
 const { generateResponse }               = require('./ai/llm.service');
-const { parseJSONObject, ParseError }    = require('./ai/responseParser');
+const { parseJSONObject, ParseError, parseJSON } = require('./ai/responseParser');
 
 // ── Required fields the LLM must return ─────────────────────────────
 const REQUIRED_FIELDS = [
@@ -98,7 +98,7 @@ const _getWeakConcepts = async (studentId, topicId) => {
  */
 const getOrGenerateContent = async (studentId, moduleId) => {
   // ── 1. Cache check ────────────────────────────────────────────────
-const existing = await StudentModuleContent.findOne({
+  const existing = await StudentModuleContent.findOne({
     studentId,
     moduleId,
   });
@@ -186,8 +186,25 @@ const existing = await StudentModuleContent.findOne({
   // ── 6. Call LLM ───────────────────────────────────────────────────
   const llmResult = await generateResponse(prompt);
 
- // ── 7. Validate response ──────────────────────────────────────────
-  const parsed = parseJSONObject(llmResult.content);
+ // ── 7. Parse & validate response ─────────────────────────────────
+  // The LLM should return a plain object; defensively unwrap a
+  // single-element array in case the model ignores the shape instruction.
+  let rawParsed;
+  try {
+    rawParsed = parseJSONObject(llmResult.content);
+  } catch (e) {
+    // If parseJSONObject failed because it got an array, try unwrapping
+    const fallback = parseJSON(llmResult.content);
+    if (Array.isArray(fallback) && fallback.length > 0 && typeof fallback[0] === 'object') {
+      rawParsed = fallback[0];
+    } else {
+      throw e; // Re-throw original error
+    }
+  }
+  const parsed = rawParsed;
+
+  // Validate required fields and normalise arrays (keyPoints, examples)
+  _validateContentFields(parsed);
 
   // ── 8. Save ───────────────────────────────────────────────────────
   const saved = await StudentModuleContent.create({

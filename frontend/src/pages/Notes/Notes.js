@@ -1,16 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../../components/layout/PageLayout";
-import { getModuleById, getFullNotes } from "../../api/moduleApi";
+import { getModuleById, getFullNotes, submitQuestAnswer, getQuestAttempts } from "../../api/moduleApi";
+import { useAuth } from "../../context/AuthContext";
 import styles from "./Notes.module.css";
 
 function Notes() {
   const { moduleId } = useParams();
   const navigate = useNavigate();
+  const { refreshUser, user } = useAuth();
+
   const [moduleInfo, setModuleInfo] = useState(null);
   const [notes, setNotes] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Quest state — keyed by questIndex
+  const [answers, setAnswers] = useState({});           // { [idx]: string }
+  const [submitting, setSubmitting] = useState({});     // { [idx]: bool }
+  const [results, setResults] = useState({});           // { [idx]: { isCorrect, feedback, xpAwarded } }
+  const [expandedQuest, setExpandedQuest] = useState(null);
+
   const fetchedNotesFor = useRef(null);
 
   useEffect(() => {
@@ -21,12 +31,27 @@ function Notes() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [moduleData, notesData] = await Promise.all([
+        const [moduleData, notesData, attemptsData] = await Promise.all([
           getModuleById(moduleId),
           getFullNotes(moduleId),
+          getQuestAttempts(moduleId),
         ]);
         setModuleInfo(moduleData);
         setNotes(notesData);
+
+        // Pre-populate results for already-attempted quests
+        if (attemptsData && attemptsData.length > 0) {
+          const preloaded = {};
+          attemptsData.forEach((a) => {
+            preloaded[a.questIndex] = {
+              isCorrect:   a.isCorrect,
+              feedback:    a.feedback,
+              xpAwarded:   a.xpAwarded,
+              alreadyDone: true,
+            };
+          });
+          setResults(preloaded);
+        }
       } catch (err) {
         console.error("Failed to load full notes:", err);
         setError(
@@ -41,10 +66,55 @@ function Notes() {
     fetchData();
   }, [moduleId]);
 
+  const handleAnswerChange = (index, value) => {
+    setAnswers((prev) => ({ ...prev, [index]: value }));
+  };
+
+  const handleSubmit = async (index) => {
+    const answer = answers[index]?.trim();
+    if (!answer) return;
+
+    setSubmitting((prev) => ({ ...prev, [index]: true }));
+    try {
+      const result = await submitQuestAnswer(moduleId, index, answer);
+      setResults((prev) => ({ ...prev, [index]: result }));
+
+      // Refresh auth user so XP/level updates in the header
+      if (result.isCorrect && user) {
+        refreshUser({ ...user, xp: result.totalXp, level: result.level });
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to evaluate. Try again.";
+      // If already attempted, treat it like a pre-loaded result
+      if (err.response?.status === 409) {
+        setResults((prev) => ({
+          ...prev,
+          [index]: { ...err.response.data, alreadyDone: true },
+        }));
+      } else {
+        setResults((prev) => ({
+          ...prev,
+          [index]: { isCorrect: false, feedback: msg, xpAwarded: 0, submitError: true },
+        }));
+      }
+    } finally {
+      setSubmitting((prev) => ({ ...prev, [index]: false }));
+    }
+  };
+
+  const xpForDifficulty = (difficulty) => {
+    if (difficulty === "advanced") return 40;
+    if (difficulty === "intermediate") return 25;
+    return 15;
+  };
+
   if (loading) {
     return (
       <PageLayout>
-        <div>Loading notes...</div>
+        <div className={styles.loadingState}>
+          <div className={styles.loadingSpinner} />
+          <p>Generating your full notes…</p>
+        </div>
       </PageLayout>
     );
   }
@@ -56,6 +126,9 @@ function Notes() {
       </PageLayout>
     );
   }
+
+  const difficulty = moduleInfo.difficulty || "intermediate";
+  const xpReward = xpForDifficulty(difficulty);
 
   return (
     <PageLayout>
@@ -94,14 +167,116 @@ function Notes() {
         {/* Bonus Challenges */}
         {notes.gamifiedExamples && notes.gamifiedExamples.length > 0 && (
           <div className={styles.gamifiedSection}>
-            <h3 className={styles.gamifiedTitle}>🎮 Bonus Challenges</h3>
+            <div className={styles.gamifiedHeader}>
+              <h3 className={styles.gamifiedTitle}>🎮 Bonus Challenges</h3>
+              <p className={styles.gamifiedSubtitle}>
+                Answer these quests to earn XP. You get one shot — make it count!
+              </p>
+            </div>
+
             <div className={styles.gamifiedList}>
-              {notes.gamifiedExamples.map((example, index) => (
-                <div key={index} className={styles.gamifiedCard}>
-                  <span className={styles.gamifiedBadge}>Quest {index + 1}</span>
-                  <p className={styles.gamifiedText}>{example}</p>
-                </div>
-              ))}
+              {notes.gamifiedExamples.map((example, index) => {
+                const result = results[index];
+                const isSubmitted = !!result;
+                const isOpen = expandedQuest === index;
+                const isLoading = submitting[index];
+
+                return (
+                  <div
+                    key={index}
+                    className={`${styles.gamifiedCard} ${
+                      isSubmitted
+                        ? result.isCorrect
+                          ? styles.cardCorrect
+                          : styles.cardWrong
+                        : ""
+                    }`}
+                  >
+                    {/* Quest Header Row */}
+                    <div className={styles.questHeader}>
+                      <div className={styles.questLeft}>
+                        <span className={styles.gamifiedBadge}>Quest {index + 1}</span>
+                        {isSubmitted && (
+                          <span className={result.isCorrect ? styles.correctBadge : styles.wrongBadge}>
+                            {result.isCorrect ? "✓ Correct" : "✗ Incorrect"}
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles.questRight}>
+                        <span className={styles.xpPill}>
+                          ⭐ +{xpReward} XP
+                        </span>
+                        {!isSubmitted && (
+                          <button
+                            className={styles.toggleBtn}
+                            onClick={() => setExpandedQuest(isOpen ? null : index)}
+                          >
+                            {isOpen ? "Collapse ▲" : "Answer ▼"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quest Text */}
+                    <p className={styles.gamifiedText}>{example}</p>
+
+                    {/* Answer Panel — open when not yet submitted */}
+                    {!isSubmitted && isOpen && (
+                      <div className={styles.answerPanel}>
+                        <label className={styles.answerLabel}>Write your answer</label>
+                        <textarea
+                          className={styles.answerInput}
+                          rows={3}
+                          placeholder="Type your answer here..."
+                          value={answers[index] || ""}
+                          onChange={(e) => handleAnswerChange(index, e.target.value)}
+                          disabled={isLoading}
+                        />
+                        <div className={styles.answerActions}>
+                          <button
+                            className={styles.skipBtn}
+                            onClick={() => setExpandedQuest(null)}
+                            disabled={isLoading}
+                          >
+                            ▷▷ Skip
+                          </button>
+                          <button
+                            className={styles.submitBtn}
+                            onClick={() => handleSubmit(index)}
+                            disabled={isLoading || !answers[index]?.trim()}
+                          >
+                            {isLoading ? (
+                              <span className={styles.btnSpinner} />
+                            ) : (
+                              "✦ Check Answer"
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Result Panel — shown after submission */}
+                    {isSubmitted && (
+                      <div className={`${styles.resultPanel} ${result.isCorrect ? styles.resultCorrect : styles.resultWrong}`}>
+                        <div className={styles.resultIcon}>
+                          {result.isCorrect ? "🏆" : "💡"}
+                        </div>
+                        <div className={styles.resultBody}>
+                          <p className={styles.resultTitle}>
+                            {result.isCorrect
+                              ? `Great job! +${result.xpAwarded} XP earned`
+                              : "Not quite — here's the correction:"}
+                          </p>
+                          <p className={styles.resultFeedback}>{result.feedback}</p>
+                          {result.alreadyDone && (
+                            <p className={styles.alreadyNote}>You already attempted this quest.</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

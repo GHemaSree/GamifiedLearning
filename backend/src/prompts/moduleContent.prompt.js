@@ -21,16 +21,16 @@ const getDefaultModuleContentPrompt = () => {
     'Generate detailed learning content for the concept "{{concept}}" ' +
     'within the topic "{{topic}}" in the subject of {{subject}}. ' +
     'The target difficulty level is {{difficulty}}. ' +
-    'Provide the content as a JSON object with these exact keys: ' +
-    '"introduction" (a brief engaging introduction), ' +
-    '"objective" (the learning objective for this module), ' +
-    '"content" (the main detailed lesson body with clear explanations), ' +
-    '"keyPoints" (an array of key takeaway strings), ' +
-    '"examples" (an array of practical example strings), ' +
-    '"summary" (a concise summary paragraph). ' +
+    'Your response must be a SINGLE JSON object matching this exact shape — ' +
+    'do NOT wrap it in an array: ' +
+    '{"introduction": "<brief engaging intro>", ' +
+    '"objective": "<learning objective>", ' +
+    '"content": "<detailed lesson body>", ' +
+    '"keyPoints": ["<takeaway 1>", "<takeaway 2>"], ' +
+    '"examples": ["<example 1>", "<example 2>"], ' +
+    '"summary": "<concise summary>"}. ' +
     'Keep the tone engaging, clear, and accessible. ' +
-    'Return ONLY the JSON object — no extra text. ' +
-    'Return the result as {{outputFormat}}.'
+    'Return ONLY the raw JSON object — no markdown, no prose, no code fences, no extra text.'
   );
 };
 
@@ -50,16 +50,16 @@ const getAdaptiveModuleContentPrompt = () => {
     'Use this mastery information to adjust the depth and emphasis of explanations. ' +
     'If the student is weak in prerequisite areas, include brief refreshers. ' +
     'If the student is strong, move faster and include more advanced examples. ' +
-    'Provide the content as a JSON object with these exact keys: ' +
-    '"introduction" (a brief engaging introduction that connects to prior knowledge), ' +
-    '"objective" (the learning objective for this module), ' +
-    '"content" (the main detailed lesson body, adapted to the student\'s level), ' +
-    '"keyPoints" (an array of key takeaway strings), ' +
-    '"examples" (an array of practical example strings tailored to the student\'s level), ' +
-    '"summary" (a concise summary paragraph). ' +
+    'Your response must be a SINGLE JSON object matching this exact shape — ' +
+    'do NOT wrap it in an array: ' +
+    '{"introduction": "<brief engaging intro connecting to prior knowledge>", ' +
+    '"objective": "<learning objective>", ' +
+    '"content": "<detailed lesson body adapted to the student level>", ' +
+    '"keyPoints": ["<takeaway 1>", "<takeaway 2>"], ' +
+    '"examples": ["<example 1>", "<example 2>"], ' +
+    '"summary": "<concise summary>"}. ' +
     'Keep the tone engaging, clear, and accessible. ' +
-    'Return ONLY the JSON object — no extra text. ' +
-    'Return the result as {{outputFormat}}.'
+    'Return ONLY the raw JSON object — no markdown, no prose, no code fences, no extra text.'
   );
 };
 

@@ -42,18 +42,22 @@ const getDefaultFullNotesPrompt = () => {
     '6) Connections to related concepts in {{topic}}, ' +
     '7) A concise recap that ties everything together. ' +
 
-    'GAMIFIED EXAMPLES: For each major concept within the notes, embed at least one ' +
-    'gamified example — use game-like scenarios, point systems, level-up analogies, ' +
-    'quest/mission framing, or challenge-style problems to make examples fun and memorable. ' +
-    'For instance, instead of "add 2 + 3", frame it as "You earn 2 XP from Quest A and 3 XP ' +
-    'from Quest B — what is your total XP?". Weave these naturally into the section content. ' +
+    'GAMIFIED EXAMPLES: For each major concept within the notes, create at least one ' +
+    'gamified example that is DIRECTLY tied to the technical content of "{{concept}}". ' +
+    'The game framing must use the actual concept as its scenario — do NOT use generic ' +
+    'XP/points metaphors disconnected from the subject. ' +
+    'For example: if the concept is "Binary Search", frame it as ' +
+    '"You are searching a sorted dungeon of 1024 rooms — how many doors do you check at most?". ' +
+    'If the concept is "CSS Flexbox", frame it as ' +
+    '"You are a layout wizard arranging hero cards in a row — which flex property controls the spacing?". ' +
+    'Every gamified example must test or illustrate a real aspect of "{{concept}}". ' +
+    'Weave these naturally into the section content. ' +
 
-    'Provide the result as a JSON object with these exact keys: ' +
-    '"title" (the concept name as a clear title), ' +
-    '"sections" (an array of objects, each with "heading" (string) and "content" (string — ' +
-    'a rich, detailed paragraph or multi-paragraph explanation with gamified examples embedded)), ' +
-    '"gamifiedExamples" (an array of standalone gamified example strings that can be shown ' +
-    'as bonus challenges — each framed as a mini-quest, puzzle, or point-scoring scenario). ' +
+    'Your response must be a SINGLE JSON object matching this exact shape — ' +
+    'do NOT wrap it in an array: ' +
+    '{"title": "<concept name>", ' +
+    '"sections": [{"heading": "<section heading>", "content": "<rich paragraph with embedded gamified examples>"}], ' +
+    '"gamifiedExamples": ["<standalone quest/challenge directly testing {{concept}}>", "<another>"]}.' +
 
     'Keep the tone engaging, clear, and student-friendly. ' +
     'Return ONLY the JSON object — no extra text. ' +
@@ -101,20 +105,22 @@ const getAdaptiveFullNotesPrompt = () => {
     '7) Advanced connections and extensions (if student mastery is high), ' +
     '8) A concise recap tying everything together. ' +
 
-    'GAMIFIED EXAMPLES: For each major concept within the notes, embed at least one ' +
-    'gamified example — use game-like scenarios, point systems, level-up analogies, ' +
-    'quest/mission framing, or challenge-style problems to make examples fun and memorable. ' +
-    'Adjust the difficulty of gamified examples to match the student\'s mastery level. ' +
-    'For weaker areas, use simpler quests with hints; for stronger areas, use boss-level ' +
-    'challenges that push the student. ' +
+    'GAMIFIED EXAMPLES: For each major concept within the notes, create at least one ' +
+    'gamified example that is DIRECTLY tied to the technical content of "{{concept}}". ' +
+    'The game framing must use the actual concept as its scenario — do NOT use generic ' +
+    'XP/points metaphors disconnected from the subject. ' +
+    'For example: if the concept is "Binary Search", frame it as ' +
+    '"You are searching a sorted dungeon of 1024 rooms — how many doors do you check at most?". ' +
+    'Adjust difficulty to the student\'s mastery: for weaker areas use guided quests with hints; ' +
+    'for stronger areas use boss-level challenges that require deeper reasoning about "{{concept}}". ' +
+    'Every gamified example must test or illustrate a real, specific aspect of "{{concept}}". ' +
+    'Weave these naturally into the section content. ' +
 
-    'Provide the result as a JSON object with these exact keys: ' +
-    '"title" (the concept name as a clear title), ' +
-    '"sections" (an array of objects, each with "heading" (string) and "content" (string — ' +
-    'a rich, detailed paragraph or multi-paragraph explanation with gamified examples embedded)), ' +
-    '"gamifiedExamples" (an array of standalone gamified example strings that can be shown ' +
-    'as bonus challenges — each framed as a mini-quest, puzzle, or point-scoring scenario, ' +
-    'difficulty-matched to the student\'s mastery). ' +
+    'Your response must be a SINGLE JSON object matching this exact shape — ' +
+    'do NOT wrap it in an array: ' +
+    '{"title": "<concept name>", ' +
+    '"sections": [{"heading": "<section heading>", "content": "<rich paragraph with embedded gamified examples>"}], ' +
+    '"gamifiedExamples": ["<standalone quest/challenge directly testing {{concept}}>", "<another>"]}.' +
 
     'Keep the tone engaging, clear, and student-friendly. ' +
     'Return ONLY the JSON object — no extra text. ' +

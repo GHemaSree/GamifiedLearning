@@ -21,12 +21,20 @@ const client = new Groq({ apiKey: llmConfig.groq.apiKey });
  * @returns {Promise<object>}  Raw Groq API response
  */
 const chatCompletion = async (messages, options = {}) => {
-  const response = await client.chat.completions.create({
+  const requestParams = {
     messages,
     model:       options.model       || llmConfig.model,
     temperature: options.temperature ?? 0.7,
     max_tokens:  options.maxTokens   ?? 2000,
-  });
+  };
+
+  // Force JSON-only output when the caller expects structured data.
+  // Skipped for free-text prompts by passing options.jsonMode = false.
+  if (options.jsonMode !== false) {
+    requestParams.response_format = { type: 'json_object' };
+  }
+
+  const response = await client.chat.completions.create(requestParams);
 
   return response;
 };

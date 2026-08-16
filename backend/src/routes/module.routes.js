@@ -9,6 +9,7 @@ const {
   clearModuleContent,
 } = require('../controllers/module.controller');
 const { getQuizByModule, clearModuleQuiz } = require('../controllers/quiz.controller');
+const { submitQuestAnswer, getQuestAttempts } = require('../controllers/quest.controller');
 const { protect } = require('../middleware/auth.middleware');
 
 router.get('/', protect, getAllModules);
@@ -19,5 +20,7 @@ router.get('/:id/full-notes', protect, getFullNotes);
 router.post('/:id/generate-content', protect, generateModuleContent);
 router.delete('/:id/content/cache', protect, clearModuleContent);   // clears StudentModuleContent for re-gen
 router.delete('/:id/quiz/cache', protect, clearModuleQuiz);          // clears Quiz for adaptive re-gen
+router.post('/:id/quests/:questIndex/answer', protect, submitQuestAnswer);  // submit quest answer → LLM judge → XP
+router.get('/:id/quests/attempts', protect, getQuestAttempts);              // fetch prior attempts for this module
 
 module.exports = router;

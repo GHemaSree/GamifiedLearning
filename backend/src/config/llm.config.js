@@ -5,13 +5,13 @@
 
 const llmConfig = {
   provider: process.env.LLM_PROVIDER || 'groq',
-  model:    process.env.LLM_MODEL    || 'llama-3.3-70b-versatile',
+  model: process.env.LLM_MODEL || 'openai/gpt-oss-120b',
 
   groq: {
     apiKey: process.env.GROQ_API_KEY,
   },
 };
-
+console.log(llmConfig);
 // ── Startup validation ──────────────────────────────────────────────
 // Fail fast if the active provider's API key is missing.
 // This avoids confusing runtime errors deep inside a request handler.

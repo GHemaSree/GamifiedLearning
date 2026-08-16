@@ -12,7 +12,7 @@ const { ParseError } = require('../services/ai/responseParser');
 const { titleToSlug } = require('../utils/topicSlug');
 
 const PASS_THRESHOLD = 80;
-const LEVEL_THRESHOLDS = [0, 500, 1000, 2000, 3500, 5000];
+const LEVEL_THRESHOLDS = [0, 543, 1090, 2063, 3567, 5081];
 
 const calculateLevel = (xp) => {
   let level = 1;
