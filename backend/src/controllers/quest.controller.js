@@ -150,7 +150,7 @@ exports.getQuestAttempts = async (req, res) => {
     const attempts = await QuestAttempt.find({
       user:     req.user._id,
       moduleId: req.params.id,
-    }).select('questIndex isCorrect xpAwarded feedback createdAt');
+    }).select('questIndex isCorrect xpAwarded feedback answer createdAt');
 
     return res.status(200).json({ attempts });
   } catch (err) {

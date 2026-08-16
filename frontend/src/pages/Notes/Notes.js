@@ -39,9 +39,10 @@ function Notes() {
         setModuleInfo(moduleData);
         setNotes(notesData);
 
-        // Pre-populate results for already-attempted quests
+        // Pre-populate results and answers for already-attempted quests
         if (attemptsData && attemptsData.length > 0) {
           const preloaded = {};
+          const preloadedAnswers = {};
           attemptsData.forEach((a) => {
             preloaded[a.questIndex] = {
               isCorrect:   a.isCorrect,
@@ -49,8 +50,12 @@ function Notes() {
               xpAwarded:   a.xpAwarded,
               alreadyDone: true,
             };
+            if (a.answer) {
+              preloadedAnswers[a.questIndex] = a.answer;
+            }
           });
           setResults(preloaded);
+          setAnswers((prev) => ({ ...prev, ...preloadedAnswers }));
         }
       } catch (err) {
         console.error("Failed to load full notes:", err);
@@ -206,57 +211,59 @@ function Notes() {
                         <span className={styles.xpPill}>
                           ⭐ +{xpReward} XP
                         </span>
-                        {!isSubmitted && (
-                          <button
-                            className={styles.toggleBtn}
-                            onClick={() => setExpandedQuest(isOpen ? null : index)}
-                          >
-                            {isOpen ? "Collapse ▲" : "Answer ▼"}
-                          </button>
-                        )}
+                        <button
+                          className={styles.toggleBtn}
+                          onClick={() => setExpandedQuest(isOpen ? null : index)}
+                        >
+                          {isOpen ? "Collapse ▲" : isSubmitted ? "View Result ▼" : "Answer ▼"}
+                        </button>
                       </div>
                     </div>
 
                     {/* Quest Text */}
                     <p className={styles.gamifiedText}>{example}</p>
 
-                    {/* Answer Panel — open when not yet submitted */}
-                    {!isSubmitted && isOpen && (
+                    {/* Answer Panel — open when not yet submitted OR when viewing result */}
+                    {isOpen && (
                       <div className={styles.answerPanel}>
-                        <label className={styles.answerLabel}>Write your answer</label>
+                        <label className={styles.answerLabel}>
+                          {isSubmitted ? "Your answer:" : "Write your answer"}
+                        </label>
                         <textarea
                           className={styles.answerInput}
                           rows={3}
                           placeholder="Type your answer here..."
                           value={answers[index] || ""}
                           onChange={(e) => handleAnswerChange(index, e.target.value)}
-                          disabled={isLoading}
+                          disabled={isLoading || isSubmitted}
                         />
-                        <div className={styles.answerActions}>
-                          <button
-                            className={styles.skipBtn}
-                            onClick={() => setExpandedQuest(null)}
-                            disabled={isLoading}
-                          >
-                            ▷▷ Skip
-                          </button>
-                          <button
-                            className={styles.submitBtn}
-                            onClick={() => handleSubmit(index)}
-                            disabled={isLoading || !answers[index]?.trim()}
-                          >
-                            {isLoading ? (
-                              <span className={styles.btnSpinner} />
-                            ) : (
-                              "✦ Check Answer"
-                            )}
-                          </button>
-                        </div>
+                        {!isSubmitted && (
+                          <div className={styles.answerActions}>
+                            <button
+                              className={styles.skipBtn}
+                              onClick={() => setExpandedQuest(null)}
+                              disabled={isLoading}
+                            >
+                              ▷▷ Skip
+                            </button>
+                            <button
+                              className={styles.submitBtn}
+                              onClick={() => handleSubmit(index)}
+                              disabled={isLoading || !answers[index]?.trim()}
+                            >
+                              {isLoading ? (
+                                <span className={styles.btnSpinner} />
+                              ) : (
+                                "✦ Check Answer"
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    {/* Result Panel — shown after submission */}
-                    {isSubmitted && (
+                    {/* Result Panel — shown after submission AND expanded */}
+                    {isSubmitted && isOpen && (
                       <div className={`${styles.resultPanel} ${result.isCorrect ? styles.resultCorrect : styles.resultWrong}`}>
                         <div className={styles.resultIcon}>
                           {result.isCorrect ? "🏆" : "💡"}

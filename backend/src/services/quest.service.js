@@ -24,13 +24,12 @@ const XP_BY_DIFFICULTY = {
  * @returns {string}           – Ready-to-send prompt string
  */
 const _buildJudgePrompt = (questText, userAnswer) =>
-  'You are a fair and educational answer evaluator. ' +
+  'You are a strict and precise educational answer evaluator. ' +
   'A student was given the following gamified challenge:\n\n' +
   `QUEST: ${questText}\n\n` +
   `STUDENT ANSWER: ${userAnswer}\n\n` +
-  'Evaluate whether the student\'s answer is correct. ' +
-  'Accept reasonable paraphrases and conceptually correct responses — ' +
-  'do not require word-for-word matches. ' +
+  'Evaluate whether the student\'s answer is definitively correct. ' +
+  'Do NOT accept vague, partially correct, or incorrect answers. If the answer is wrong, mark it as incorrect. ' +
   'If incorrect, clearly explain the right answer in an encouraging, educational tone. ' +
   'If correct, confirm it and add a brief insight to reinforce learning. ' +
   'Your response must be a SINGLE JSON object with exactly these two keys: ' +
