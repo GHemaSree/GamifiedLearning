@@ -6,7 +6,40 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth.routes');
 const { protect } = require('./middleware/auth.middleware');
 
-connectDB();
+const User = require('./models/User');
+
+const seedAdmin = async () => {
+  try {
+    const admins = [
+      { name: 'TrailForge Admin', email: 'admin@trailforge.com', password: 'AdminPassword123' },
+      { name: 'Gmail Admin', email: 'admin@gmail.com', password: 'AdminPassword123' }
+    ];
+
+    for (const adminData of admins) {
+      let user = await User.findOne({ email: adminData.email });
+      if (!user) {
+        await User.create({
+          name: adminData.name,
+          email: adminData.email,
+          password: adminData.password,
+          role: 'admin',
+        });
+        console.log(`Seeded admin: ${adminData.email} / ${adminData.password}`);
+      } else {
+        user.role = 'admin';
+        user.password = adminData.password; // Schema pre-save hook will hash it
+        await user.save();
+        console.log(`Reset/Verified admin: ${adminData.email}`);
+      }
+    }
+  } catch (err) {
+    console.error('Error seeding default admin users:', err.message);
+  }
+};
+
+connectDB().then(() => {
+  seedAdmin();
+});
 
 const app = express();
 

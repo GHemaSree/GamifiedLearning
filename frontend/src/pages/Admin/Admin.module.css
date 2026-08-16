@@ -491,3 +491,30 @@
 .rosterStatIcon {
   font-size: var(--font-size-sm);
 }
+
+@media (max-width: 650px) {
+  .card {
+    padding: var(--space-lg) var(--space-md);
+  }
+  .inventoryItem,
+  .rosterItem {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-md);
+  }
+  .inventoryActions,
+  .rosterStats {
+    justify-content: flex-start;
+    margin-top: var(--space-xs);
+  }
+  .conceptRow {
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+  .conceptRow input {
+    width: 100%;
+  }
+  .conceptRow input[type="number"] {
+    max-width: 100% !important;
+  }
+}
