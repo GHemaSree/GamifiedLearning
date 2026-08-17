@@ -205,12 +205,15 @@ exports.submitQuiz = async (req, res) => {
     const topicSlug = titleToSlug(trail.topic?.title || trail.topic?.toString());
     console.log(`[quiz.controller] DKT call → topic=${topicSlug} concept=${module.concept} difficulty=${module.difficulty} passed=${passed}`);
 
+    // Extract array of 1s and 0s for each question
+    const results = questionBreakdown.map(q => q.isCorrect ? 1 : 0);
+
     const dktResult = await getDKTPrediction({
       userId: req.user._id.toString(),
       topicSlug,
       concept: module.concept,
       difficulty: module.difficulty,
-      isCorrect: passed,
+      results,
       priorMastery: priorScores,   // used only if ml-backend is unreachable
     });
 

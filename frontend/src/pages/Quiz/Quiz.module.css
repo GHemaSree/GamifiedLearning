@@ -19,7 +19,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .generatingText {
@@ -35,12 +37,39 @@
   margin: 0;
 }
 
+.quizFullscreenWrapper {
+  min-height: 100vh;
+  width: 100vw;
+  background-color: rgba(15, 23, 42, 0.95);
+  /* darker overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-lg);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  overflow: hidden;
+  /* no page scroll */
+}
+
 /* ── Main layout ─────────────────────────────────────────────────── */
 .page {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
   max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  /* Don't let the box exceed the screen height */
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  overflow-y: auto;
+  /* scrollable box */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
 
@@ -94,14 +123,16 @@
   box-shadow: var(--shadow-md);
 }
 
-.bossSection, .playerSection {
+.bossSection,
+.playerSection {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
 }
 
-.bossHeader, .playerHeader {
+.bossHeader,
+.playerHeader {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
@@ -116,11 +147,13 @@
   color: var(--color-secondary);
 }
 
-.bossHpText, .playerHpText {
+.bossHpText,
+.playerHpText {
   color: var(--color-text-primary);
 }
 
-.bossHpBar, .playerHpBar {
+.bossHpBar,
+.playerHpBar {
   height: 10px;
   background-color: rgba(0, 0, 0, 0.4);
   border-radius: 999px;
@@ -154,7 +187,10 @@
 }
 
 @keyframes pulseVersus {
-  to { transform: scale(1.1); color: var(--color-text-primary); }
+  to {
+    transform: scale(1.1);
+    color: var(--color-text-primary);
+  }
 }
 
 /* Battle Dialogue */
@@ -329,14 +365,46 @@
     gap: var(--space-md);
     align-items: stretch;
   }
-  .bossSection, .playerSection {
+
+  .bossSection,
+  .playerSection {
     align-items: center;
     text-align: center;
     width: 100%;
   }
+
   .header {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-sm);
   }
-}
+
+  .quizFullscreenWrapper {
+    padding: var(--space-sm);
+  }
+
+  .page {
+    padding: var(--space-md);
+    max-height: 95vh;
+  }
+
+  .questionCard {
+    padding: var(--space-md);
+  }
+
+  .questionText {
+    font-size: var(--font-size-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .option {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--font-size-sm);
+  }
+
+  .navBtn,
+  .submitBtn {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--font-size-sm);
+  }
+}

@@ -132,24 +132,26 @@ def on_quiz_submit(
     topic:      str,
     concept:    str,
     difficulty: str,
-    correct:    int,
+    results:    list,
 ) -> tuple:
     """
     Main function called by your quiz route after every quiz.
 
     Args:
         model:      DKT model for this topic
-        history:    (concept, difficulty, correct) list BEFORE this answer
+        history:    (concept, difficulty, correct) list BEFORE this answer batch
         topic:      "java" | "python" | "sql"
         concept:    "loops" | "recursion" | ...
         difficulty: "beginner" | "intermediate" | "advanced"
-        correct:    1 or 0
+        results:    list of 1s and 0s for each question
 
     Returns:
         mastery    full mastery dict (all concepts)
         next_level "beginner" | "intermediate" | "advanced"
     """
-    updated_history = history + [(concept, difficulty, correct)]
+    updated_history = history.copy()
+    for res in results:
+        updated_history.append((concept, difficulty, res))
     mastery         = get_mastery(model, updated_history, topic)
     next_level      = decide_level(mastery, concept)
     return mastery, next_level

@@ -8,26 +8,28 @@
 // so the quiz flow is never blocked by the ML service being down.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ML_BACKEND_URL = process.env.ML_BACKEND_URL || 'http://localhost:8000';
+const ML_BACKEND_URL = process.env.ML_BACKEND_URL || 'http://127.0.0.1:8000';
 
 // ── Mock fallback (original arithmetic — used only when ml-backend is down) ──
 
-const _mockDKTPrediction = (priorMastery, difficulty, isCorrect) => {
+const _mockDKTPrediction = (priorMastery, difficulty, results) => {
   const updated = { ...priorMastery };
-  const delta = isCorrect ? 0.13 : -0.12;
-  updated[difficulty] = Math.min(0.99, Math.max(0.05, updated[difficulty] + delta));
-
-  let nextDifficulty = difficulty;
-  if (isCorrect && updated[difficulty] >= 0.75) {
-    if (difficulty === 'beginner') nextDifficulty = 'intermediate';
-    else if (difficulty === 'intermediate') nextDifficulty = 'advanced';
-  } else if (!isCorrect && updated[difficulty] < 0.4) {
-    if (difficulty === 'advanced') nextDifficulty = 'intermediate';
-    else if (difficulty === 'intermediate') nextDifficulty = 'beginner';
+  // Process each question result sequentially
+  for (const res of results) {
+    const isCorrect = res === 1;
+    const delta = isCorrect ? 0.13 : -0.12;
+    updated[difficulty] = Math.min(0.99, Math.max(0.05, updated[difficulty] + delta));
   }
 
-  const readyToAdvanceConcept = updated[difficulty] >= 0.7 && difficulty !== 'beginner';
-  return { updated, nextDifficulty, readyToAdvanceConcept };
+  // Same threshold logic as Python ML backend
+  const mid = updated.intermediate;
+  let nextDifficulty = 'beginner';
+  if (mid >= 0.75) nextDifficulty = 'advanced';
+  else if (mid >= 0.40) nextDifficulty = 'intermediate';
+
+  const readyToAdvanceConcept = updated.advanced >= 0.75;
+
+  return { updated, nextDifficulty, readyToAdvanceConcept, fullMastery: {} };
 };
 
 
@@ -44,7 +46,7 @@ const _mockDKTPrediction = (priorMastery, difficulty, isCorrect) => {
  * @param {string} params.topicSlug   - DKT topic key  (e.g. "python_fundamentals")
  * @param {string} params.concept     - Concept name   (e.g. "loops")
  * @param {string} params.difficulty  - "beginner" | "intermediate" | "advanced"
- * @param {boolean} params.isCorrect  - Whether the student passed the quiz
+ * @param {number[]} params.results   - Array of 1s and 0s for each question
  * @param {object} params.priorMastery - { beginner, intermediate, advanced } — used
  *                                       for the mock fallback only
  * @returns {Promise<{ updated, nextDifficulty, readyToAdvanceConcept }>}
@@ -54,19 +56,19 @@ const getDKTPrediction = async ({
   topicSlug,
   concept,
   difficulty,
-  isCorrect,
+  results,
   priorMastery,
 }) => {
   try {
     const response = await fetch(`${ML_BACKEND_URL}/quiz/submit`, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id:    userId,
-        topic:      topicSlug,
+        user_id: userId,
+        topic: topicSlug,
         concept,
         difficulty,
-        correct:    isCorrect ? 1 : 0,
+        results,
       }),
       signal: AbortSignal.timeout(10_000),  // 10-second timeout
     });
@@ -80,18 +82,20 @@ const getDKTPrediction = async ({
     // data = { xp_earned, next_level, concept_complete, mastery, full_mastery }
 
     return {
-      updated:                data.mastery,          // { beginner, intermediate, advanced }
-      nextDifficulty:         data.next_level,
-      readyToAdvanceConcept:  data.concept_complete,
-      fullMastery:            data.full_mastery,     // all concepts — available for future use
+      updated: data.mastery,          // { beginner, intermediate, advanced }
+      nextDifficulty: data.next_level,
+      readyToAdvanceConcept: data.concept_complete,
+      fullMastery: data.full_mastery,     // all concepts — available for future use
     };
 
   } catch (err) {
     // ── Graceful fallback ────────────────────────────────────────────────────
     console.warn(
       `[ai.service] ml-backend unreachable (${err.message}). ` +
+      `URL tried: ${ML_BACKEND_URL}/quiz/submit\n` +
       'Falling back to mock DKT arithmetic.'
     );
+    console.error(err);
     return _mockDKTPrediction(priorMastery, difficulty, isCorrect);
   }
 };
@@ -114,12 +118,12 @@ const generateModuleContent = async (topicTitle, concept, difficulty) => {
       `How ${concept} connects to related concepts`,
     ],
     sections: [
-      { heading: `What is ${concept}?`,      content: `Explanation of ${concept} at ${difficulty} depth.` },
-      { heading: `Why ${concept} matters`,   content: `Why ${concept} is important in ${topicTitle}.` },
-      { heading: `Working with ${concept}`,  content: `Detailed walkthrough of using ${concept}.` },
+      { heading: `What is ${concept}?`, content: `Explanation of ${concept} at ${difficulty} depth.` },
+      { heading: `Why ${concept} matters`, content: `Why ${concept} is important in ${topicTitle}.` },
+      { heading: `Working with ${concept}`, content: `Detailed walkthrough of using ${concept}.` },
     ],
-    content:  `${difficulty}-level detailed notes for ${concept} in ${topicTitle}.`,
-    summary:  `A quick overview of ${concept}, covering the essentials needed to move forward in ${topicTitle}.`,
+    content: `${difficulty}-level detailed notes for ${concept} in ${topicTitle}.`,
+    summary: `A quick overview of ${concept}, covering the essentials needed to move forward in ${topicTitle}.`,
     duration: difficulty === 'beginner' ? 25 : difficulty === 'intermediate' ? 35 : 45,
   };
 };
@@ -127,8 +131,8 @@ const generateModuleContent = async (topicTitle, concept, difficulty) => {
 const generateQuiz = async (topicTitle, concept, difficulty) => {
   await new Promise((resolve) => setTimeout(resolve, 600));
   return Array.from({ length: 5 }, (_, i) => ({
-    question:      `Mock ${difficulty} question ${i + 1} about ${concept} in ${topicTitle}?`,
-    options:       ['Option A', 'Option B', 'Option C', 'Option D'],
+    question: `Mock ${difficulty} question ${i + 1} about ${concept} in ${topicTitle}?`,
+    options: ['Option A', 'Option B', 'Option C', 'Option D'],
     correctAnswer: 0,
   }));
 };

@@ -22,7 +22,7 @@ class QuizSubmit(BaseModel):
     topic:      str
     concept:    str
     difficulty: str
-    correct:    int   # 1 = correct, 0 = wrong
+    results:    list[int]   # list of 1s and 0s
 
 
 def find_matching_concept(incoming_concept: str, available_concepts: list) -> str:
@@ -60,7 +60,7 @@ async def submit_quiz(payload: QuizSubmit):
 
     Steps:
     1. Resolve normalized concept name matching skills.py definition
-    2. Save interaction to MongoDB (quiz_interactions collection)
+    2. Save interactions to MongoDB (quiz_interactions collection)
     3. Pull full interaction history for this user+topic (ordered by timestamp ASC)
     4. Run DKT inference → mastery + next_level
     5. Return result; Node.js backend writes the authoritative Mastery document
@@ -76,15 +76,20 @@ async def submit_quiz(payload: QuizSubmit):
 
     matched_concept = find_matching_concept(payload.concept, concepts)
 
-    # ── Step 1: Save this interaction ────────────────────────────────────────
-    db["quiz_interactions"].insert_one({
-        "user_id":    payload.user_id,
-        "topic":      payload.topic,
-        "concept":    matched_concept,
-        "difficulty": payload.difficulty,
-        "correct":    payload.correct,
-        "timestamp":  datetime.now(timezone.utc),
-    })
+    # ── Step 1: Save these interactions ────────────────────────────────────────
+    interactions = []
+    now = datetime.now(timezone.utc)
+    for res in payload.results:
+        interactions.append({
+            "user_id":    payload.user_id,
+            "topic":      payload.topic,
+            "concept":    matched_concept,
+            "difficulty": payload.difficulty,
+            "correct":    res,
+            "timestamp":  now,
+        })
+    if interactions:
+        db["quiz_interactions"].insert_many(interactions)
 
     # ── Step 2: Pull full interaction history (oldest first) ─────────────────
     rows = list(
@@ -96,13 +101,19 @@ async def submit_quiz(payload: QuizSubmit):
         .sort("timestamp", 1)   # ascending = oldest first
     )
 
-    # history BEFORE this answer (all rows including the one just inserted,
-    # but process_quiz_answer appends the current answer internally)
-    # We pass history EXCLUDING the last item (the one we just inserted)
-    # so DKT gets the pre-answer history and appends the new one itself.
+    # history BEFORE this answer batch (all rows including the ones just inserted,
+    # but process_quiz_answer appends the current answer batch internally)
+    # We pass history EXCLUDING the last len(payload.results) items (the ones we just inserted)
+    # so DKT gets the pre-answer history and appends the new ones itself.
+    num_inserted = len(payload.results)
+    if num_inserted > 0:
+        history_rows = rows[:-num_inserted]
+    else:
+        history_rows = rows
+
     user_history = [
         (r["concept"], r["difficulty"], r["correct"])
-        for r in rows[:-1]   # all but the last (just inserted) interaction
+        for r in history_rows
     ]
 
     # ── Step 3: Run DKT inference ─────────────────────────────────────────────
@@ -112,7 +123,7 @@ async def submit_quiz(payload: QuizSubmit):
             topic        = payload.topic,
             concept      = matched_concept,
             difficulty   = payload.difficulty,
-            correct      = payload.correct,
+            results      = payload.results,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -122,7 +133,8 @@ async def submit_quiz(payload: QuizSubmit):
 
     # ── Step 5: XP calculation (mirrors Node.js logic) ────────────────────────
     xp_map = {"beginner": 10, "intermediate": 20, "advanced": 30}
-    xp     = xp_map.get(payload.difficulty, 10) if payload.correct else 5
+    correct_count = sum(payload.results)
+    xp = correct_count * xp_map.get(payload.difficulty, 10)
 
     # ── Step 6: Return to Node.js backend ─────────────────────────────────────
     return {

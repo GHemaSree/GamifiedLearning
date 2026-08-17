@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
-import PageLayout from "../../components/layout/PageLayout";
+// PageLayout removed to hide navigation during quiz
 import { useAuth } from "../../context/AuthContext";
 import { getModuleQuiz, getModuleById } from "../../api/moduleApi";
 import { submitQuiz } from "../../api/quizApi";
@@ -20,6 +20,28 @@ function Quiz() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
+
+  // Trap browser navigation (prevent back button & closing tab)
+  useEffect(() => {
+    // 1. Prevent back button
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+    };
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handlePopState);
+
+    // 2. Prevent closing tab / reloading
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   // Safe calculated variables (before early loading returns)
   const currentQuestion = quiz?.questions ? quiz.questions[currentIndex] : null;
@@ -67,15 +89,15 @@ function Quiz() {
 
       navigate("/score", {
         state: {
-          score:              result.correctCount,
-          total:              result.totalQuestions,
-          scorePercent:       result.score,
-          passed:             result.passed,
-          xpEarned:           result.xpEarned,
-          readyToAdvance:     result.readyToAdvance,
-          mastery:            result.mastery,
-          newBadges:          result.newBadges || [],
-          questionBreakdown:  result.questionBreakdown || [],
+          score: result.correctCount,
+          total: result.totalQuestions,
+          scorePercent: result.score,
+          passed: result.passed,
+          xpEarned: result.xpEarned,
+          readyToAdvance: result.readyToAdvance,
+          mastery: result.mastery,
+          newBadges: result.newBadges || [],
+          questionBreakdown: result.questionBreakdown || [],
           moduleId,
         },
       });
@@ -118,7 +140,7 @@ function Quiz() {
 
   if (loading) {
     return (
-      <PageLayout>
+      <div className={styles.quizFullscreenWrapper}>
         <div className={styles.generatingWrapper}>
           {generating ? (
             <>
@@ -130,20 +152,20 @@ function Quiz() {
             <p className={styles.generatingText}>Loading quiz...</p>
           )}
         </div>
-      </PageLayout>
+      </div>
     );
   }
 
   if (error || !quiz) {
     return (
-      <PageLayout>
+      <div className={styles.quizFullscreenWrapper}>
         <div>{error || "Quiz not found."}</div>
-      </PageLayout>
+      </div>
     );
   }
 
   return (
-    <PageLayout>
+    <div className={styles.quizFullscreenWrapper}>
       <div className={styles.page}>
 
         {/* Boss Battle Arena Header */}
@@ -198,9 +220,8 @@ function Quiz() {
             {currentQuestion.options.map((option, index) => (
               <button
                 key={index}
-                className={`${styles.option} ${
-                  selectedAnswers[currentIndex] === index ? styles.selected : ""
-                }`}
+                className={`${styles.option} ${selectedAnswers[currentIndex] === index ? styles.selected : ""
+                  }`}
                 onClick={() => handleOptionSelect(index)}
               >
                 <span className={styles.optionLetter}>
@@ -246,18 +267,16 @@ function Quiz() {
           {quiz.questions.map((_, index) => (
             <button
               key={index}
-              className={`${styles.dot} ${
-                index === currentIndex ? styles.dotActive : ""
-              } ${
-                selectedAnswers[index] !== undefined ? styles.dotAnswered : ""
-              }`}
+              className={`${styles.dot} ${index === currentIndex ? styles.dotActive : ""
+                } ${selectedAnswers[index] !== undefined ? styles.dotAnswered : ""
+                }`}
               onClick={() => setCurrentIndex(index)}
             />
           ))}
         </div>
 
       </div>
-    </PageLayout>
+    </div>
   );
 }
 

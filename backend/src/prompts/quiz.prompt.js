@@ -29,8 +29,9 @@ const getDefaultQuizPrompt = () => {
 
     'For each question: ' +
     '- Write a clear, unambiguous question stem. ' +
-    '- Provide exactly 4 answer options. ' +
-    '- Include plausible distractors that test genuine understanding, not trick wording. ' +
+    '- Provide exactly 4 answer options that are highly plausible and confusing. ' +
+    '- The correct answer should NOT be obviously different in length or format (no "odd one out"). ' +
+    '- Randomise the position of the correct answer so it is NOT always the first option. ' +
     '- Indicate the correct answer as a zero-based index (0-3). ' +
     '- Provide a brief explanation of WHY the correct answer is right. ' +
     '- Tag each question with a difficulty level (beginner, intermediate, or advanced). ' +
@@ -75,8 +76,9 @@ const getAdaptiveQuizPrompt = () => {
 
     'For each question: ' +
     '- Write a clear, unambiguous question stem. ' +
-    '- Provide exactly 4 answer options. ' +
-    '- Include plausible distractors that test genuine understanding, not trick wording. ' +
+    '- Provide exactly 4 answer options that are highly plausible and confusing. ' +
+    '- The correct answer should NOT be obviously different in length or format (no "odd one out"). ' +
+    '- Randomise the position of the correct answer so it is NOT always the first option. ' +
     '- Indicate the correct answer as a zero-based index (0-3). ' +
     '- Provide a brief explanation of WHY the correct answer is right. ' +
     '- Tag each question with a difficulty level (beginner, intermediate, or advanced). ' +

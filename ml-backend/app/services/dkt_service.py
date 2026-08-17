@@ -61,14 +61,14 @@ def process_quiz_answer(
     topic:        str,
     concept:      str,
     difficulty:   str,
-    correct:      int,
+    results:      list,
 ) -> tuple:
     """
     Runs DKT after a quiz answer.
     Returns (mastery_dict, next_level).
     """
     return on_quiz_submit(
-        get_model(topic), user_history, topic, concept, difficulty, correct
+        get_model(topic), user_history, topic, concept, difficulty, results
     )
 
 
