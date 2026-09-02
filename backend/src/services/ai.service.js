@@ -96,7 +96,7 @@ const getDKTPrediction = async ({
       'Falling back to mock DKT arithmetic.'
     );
     console.error(err);
-    return _mockDKTPrediction(priorMastery, difficulty, isCorrect);
+    return _mockDKTPrediction(priorMastery, difficulty, results);
   }
 };
 
